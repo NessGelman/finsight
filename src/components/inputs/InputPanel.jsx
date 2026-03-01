@@ -3,23 +3,23 @@ import { TOOLTIPS } from '../../data/tooltipContent';
 import { formatCurrency, creditScoreLabel } from '../../utils/formatters';
 
 const LOAN_PURPOSE_OPTIONS = [
-  { value: 'any',           label: 'Any Purpose' },
+  { value: 'any', label: 'Any Purpose' },
   { value: 'workingCapital', label: 'Working Capital' },
-  { value: 'equipment',     label: 'Equipment' },
-  { value: 'realEstate',    label: 'Real Estate' },
+  { value: 'equipment', label: 'Equipment' },
+  { value: 'realEstate', label: 'Real Estate' },
 ];
 
 const INDUSTRY_OPTIONS = [
-  { value: 'general',      label: 'General / Retail' },
+  { value: 'general', label: 'General / Retail' },
   { value: 'foodBeverage', label: 'Food & Beverage' },
-  { value: 'healthcare',   label: 'Healthcare' },
-  { value: 'technology',   label: 'Technology / SaaS' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'technology', label: 'Technology / SaaS' },
   { value: 'construction', label: 'Construction' },
-  { value: 'cannabis',     label: 'Cannabis / CBD' },
+  { value: 'cannabis', label: 'Cannabis / CBD' },
 ];
 
 export function InputPanel({ inputs, onUpdate }) {
-  const { principal, annualRevenue, businessAge, creditScore, loanPurpose, industry } = inputs;
+  const { principal, annualRevenue, fixedExpenses, businessAge, creditScore, loanPurpose, industry } = inputs;
   const monthlyRevenue = Math.round(annualRevenue / 12);
 
   return (
@@ -132,8 +132,24 @@ export function InputPanel({ inputs, onUpdate }) {
         </select>
       </InputGroup>
 
-      {/* Spacer cells to fill row 2 columns 3 and 4 */}
-      <div className="input-group input-group--empty" />
+      <InputGroup
+        data-accent="amber"
+        label="Monthly Fixed Costs"
+        tooltip={TOOLTIPS.fixedExpenses || "Estimated total fixed expenses per month"}
+        value={formatCurrency(fixedExpenses)}
+        row2
+      >
+        <input
+          type="range"
+          min={0}
+          max={500000}
+          step={1000}
+          value={fixedExpenses}
+          onChange={(e) => onUpdate('fixedExpenses', Number(e.target.value))}
+        />
+      </InputGroup>
+
+      {/* Spacer cell to fill row 2 column 4 */}
       <div className="input-group input-group--empty" />
     </div>
   );

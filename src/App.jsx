@@ -39,6 +39,7 @@ const LearningAssistant = lazy(() =>
 const DEFAULT_INPUTS = {
   principal: 100000,
   annualRevenue: 500000,
+  fixedExpenses: 20000,
   businessAge: 3,
   creditScore: 700,
   loanPurpose: 'any',
@@ -55,12 +56,14 @@ function sanitizeInputs(raw) {
   const safe = { ...DEFAULT_INPUTS, ...(raw ?? {}) };
   const principal = Number(safe.principal);
   const annualRevenue = Number(safe.annualRevenue);
+  const fixedExpenses = Number(safe.fixedExpenses);
   const businessAge = Number(safe.businessAge);
   const creditScore = Number(safe.creditScore);
 
   return {
     principal: clamp(Number.isFinite(principal) ? principal : DEFAULT_INPUTS.principal, 5000, 2000000),
     annualRevenue: clamp(Number.isFinite(annualRevenue) ? annualRevenue : DEFAULT_INPUTS.annualRevenue, 50000, 10000000),
+    fixedExpenses: clamp(Number.isFinite(fixedExpenses) ? fixedExpenses : DEFAULT_INPUTS.fixedExpenses, 0, 500000),
     businessAge: clamp(Number.isFinite(businessAge) ? businessAge : DEFAULT_INPUTS.businessAge, 0, 20),
     creditScore: clamp(Number.isFinite(creditScore) ? creditScore : DEFAULT_INPUTS.creditScore, 300, 850),
     loanPurpose: ['any', 'workingCapital', 'equipment', 'realEstate'].includes(safe.loanPurpose)
@@ -89,6 +92,7 @@ export default function App() {
   const [inputs, setInputs] = useState(getInitialInputs);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('compare');
 
   const { rates, status: ratesStatus } = useLiveRates();
 
@@ -133,69 +137,75 @@ export default function App() {
         results={results}
         inputs={inputs}
         onReset={resetInputs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <InputPanel inputs={inputs} onUpdate={updateInput} />
 
       <main className="main-content">
-        {/* ── Compare ── */}
-        <section id="compare" className="section-block section-block--compare">
-          <SummaryBar results={results} selectedProduct={selectedProduct} />
-          <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} results={results} />
-          <div className="compare-grid">
-            <TradeoffChart
-              results={results}
-              selectedProduct={selectedProduct}
-              onSelectProduct={setSelectedProduct}
-              activeFilters={activeFilter !== 'all' ? [activeFilter] : []}
-            />
-            <ComparisonTable
-              results={results}
-              selectedProduct={selectedProduct}
-              onSelectProduct={setSelectedProduct}
-            />
-          </div>
-          <div className="compare-bottom-grid">
+        {activeTab === 'compare' && (
+          <section id="compare" className="section-block section-block--compare">
+            <SummaryBar results={results} selectedProduct={selectedProduct} />
+            <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} results={results} />
+            <div className="compare-grid">
+              <ComparisonTable
+                results={results}
+                selectedProduct={selectedProduct}
+                onSelectProduct={setSelectedProduct}
+              />
+            </div>
+            <div className="compare-bottom-grid">
+              <Suspense fallback={sectionFallback}>
+                <CostBreakdown results={results} />
+              </Suspense>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'optimize' && (
+          <section id="optimize" className="section-block">
+            <div className="section-kicker">Optimize</div>
             <Suspense fallback={sectionFallback}>
-              <CostBreakdown results={results} />
-              <AffordabilityTool liveRates={rates} />
+              <ScenarioAnalysis
+                baseInputs={inputs}
+                baseResults={results}
+                liveRates={rates}
+              />
             </Suspense>
-          </div>
-        </section>
+            <div className="optimize-bottom-grid">
+              <Suspense fallback={sectionFallback}>
+                <TradeoffChart
+                  results={results}
+                  selectedProduct={selectedProduct}
+                  onSelectProduct={setSelectedProduct}
+                  activeFilters={activeFilter !== 'all' ? [activeFilter] : []}
+                />
+                <SensitivityChart inputs={inputs} liveRates={rates} />
+                <FundingTimeline results={results} />
+              </Suspense>
+            </div>
+          </section>
+        )}
 
-        {/* ── Optimize ── */}
-        <section id="optimize" className="section-block">
-          <div className="section-kicker">Optimize</div>
-          <Suspense fallback={sectionFallback}>
-            <ScenarioAnalysis
-              baseInputs={inputs}
-              baseResults={results}
-              liveRates={rates}
-            />
-          </Suspense>
-          <div className="optimize-bottom-grid">
+        {activeTab === 'learn' && (
+          <section id="learn" className="section-block">
+            <div className="section-kicker">Learn</div>
             <Suspense fallback={sectionFallback}>
-              <SensitivityChart inputs={inputs} liveRates={rates} />
-              <FundingTimeline results={results} />
+              <GlossaryView results={results} inputs={inputs} />
+              <MethodologyPanel />
             </Suspense>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* ── Learn ── */}
-        <section id="learn" className="section-block">
-          <div className="section-kicker">Learn</div>
-          <Suspense fallback={sectionFallback}>
-            <GlossaryView results={results} inputs={inputs} />
-            <MethodologyPanel />
-          </Suspense>
-        </section>
-
-        <section id="assistant" className="section-block">
-          <div className="section-kicker">Assistant</div>
-          <Suspense fallback={sectionFallback}>
-            <LearningAssistant results={results} inputs={inputs} />
-          </Suspense>
-        </section>
+        {activeTab === 'assistant' && (
+          <section id="assistant" className="section-block">
+            <div className="section-kicker">Assistant</div>
+            <Suspense fallback={sectionFallback}>
+              <LearningAssistant results={results} inputs={inputs} />
+            </Suspense>
+          </section>
+        )}
       </main>
     </AppShell>
   );

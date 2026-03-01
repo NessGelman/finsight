@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { RatesStatus } from '../shared/RatesStatus';
 import { ExportControls } from '../export/ExportControls';
 
@@ -9,34 +8,7 @@ const TABS = [
   { id: 'assistant', label: 'Assistant' },
 ];
 
-function scrollTo(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-}
-
-export function TopBar({ rates, ratesStatus, results, inputs, onReset }) {
-  const [activeSection, setActiveSection] = useState('compare');
-
-  useEffect(() => {
-    const ids = TABS.map((t) => t.id);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: '-45% 0px -45% 0px' },
-    );
-
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
+export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab, onTabChange }) {
   return (
     <div className="top-bar">
       <div className="top-bar-logo">
@@ -66,8 +38,8 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset }) {
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            className={`top-bar-tab${activeSection === tab.id ? ' active' : ''}`}
-            onClick={() => scrollTo(tab.id)}
+            className={`top-bar-tab${activeTab === tab.id ? ' active' : ''}`}
+            onClick={() => onTabChange(tab.id)}
           >
             {tab.label}
           </button>

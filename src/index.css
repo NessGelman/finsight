@@ -1,18 +1,18 @@
 /* ─── Design tokens — aligned with FinSight legacy UI ─────────────────────── */
 :root {
-  --bg-base:       #071220;
-  --bg-panel:      #030b18;
-  --bg-surface:    #071d2e;
-  --bg-elevated:   #0a1a2c;
-  --bg-hover:      #0d1f35;
+  --bg-base:       #0f172a;
+  --bg-panel:      #1e293b;
+  --bg-surface:    #0f172a;
+  --bg-elevated:   #334155;
+  --bg-hover:      #475569;
 
-  --border-subtle: #071220;
-  --border-default:#0d1f35;
-  --border-accent: #1e3a5f;
+  --border-subtle: #1e293b;
+  --border-default:#334155;
+  --border-accent: #475569;
 
-  --text-primary:  #e2e8f0;
+  --text-primary:  #f8fafc;
   --text-secondary:#cbd5e1;
-  --text-muted:    #64748b;
+  --text-muted:    #94a3b8;
 
   --accent:        #22d3ee;
   --accent-dim:    rgba(34,211,238,0.08);
@@ -186,7 +186,7 @@ section {
 .section-block {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .section-kicker {
@@ -494,8 +494,8 @@ input[type='range']::-moz-range-thumb {
 
 /* ─── Compare grid — side by side scatter + table ────────────────────────── */
 .compare-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0;
   flex: 1;
   border: 1px solid var(--border-default);
