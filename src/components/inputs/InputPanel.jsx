@@ -100,6 +100,7 @@ export function InputPanel({ inputs, onUpdate }) {
         tooltip={TOOLTIPS.loanPurpose}
         value={null}
         row2
+        span2
       >
         <div className="purpose-toggle">
           {LOAN_PURPOSE_OPTIONS.map((opt) => (
@@ -148,16 +149,19 @@ export function InputPanel({ inputs, onUpdate }) {
           onChange={(e) => onUpdate('fixedExpenses', Number(e.target.value))}
         />
       </InputGroup>
-
-      {/* Spacer cell to fill row 2 column 4 */}
-      <div className="input-group input-group--empty" />
     </div>
   );
 }
 
-function InputGroup({ label, tooltip, value, sub, children, 'data-accent': accent, row2 }) {
+function InputGroup({ label, tooltip, value, sub, children, 'data-accent': accent, row2, span2 }) {
+  const cn = [
+    'input-group',
+    row2 ? 'input-group--row2' : '',
+    span2 ? 'input-group--span2' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`input-group${row2 ? ' input-group--row2' : ''}`} data-accent={accent}>
+    <div className={cn} data-accent={accent}>
       <div className="input-label-row">
         <span className="input-label">
           {label}

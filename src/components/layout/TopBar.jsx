@@ -48,15 +48,17 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
 
       <div className="top-bar-spacer" />
 
-      <div className="top-bar-rates">
-        <RatesStatus rates={rates} status={ratesStatus} compact />
-      </div>
+      <div className="top-bar-right-cluster" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'nowrap' }}>
+        <div className="top-bar-rates">
+          <RatesStatus rates={rates} status={ratesStatus} compact />
+        </div>
 
-      <div className="top-bar-actions">
-        <button className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
-          Reset
-        </button>
-        <ExportControls results={results} inputs={inputs} compact />
+        <div className="top-bar-actions" style={{ display: 'flex', gap: '6px' }}>
+          <button className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
+            Reset
+          </button>
+          <ExportControls results={results} inputs={inputs} compact />
+        </div>
       </div>
     </div>
   );

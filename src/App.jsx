@@ -147,25 +147,26 @@ export default function App() {
         {activeTab === 'compare' && (
           <section id="compare" className="section-block section-block--compare">
             <SummaryBar results={results} selectedProduct={selectedProduct} />
-            <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} results={results} />
-            <div className="compare-grid">
-              <ComparisonTable
-                results={results}
-                selectedProduct={selectedProduct}
-                onSelectProduct={setSelectedProduct}
-              />
-            </div>
-            <div className="compare-bottom-grid">
-              <Suspense fallback={sectionFallback}>
-                <CostBreakdown results={results} />
-              </Suspense>
+            <div className="compare-data-block">
+              <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} results={results} />
+              <div className="compare-grid">
+                <ComparisonTable
+                  results={results}
+                  selectedProduct={selectedProduct}
+                  onSelectProduct={setSelectedProduct}
+                />
+              </div>
+              <div className="compare-bottom-grid">
+                <Suspense fallback={sectionFallback}>
+                  <CostBreakdown results={results} />
+                </Suspense>
+              </div>
             </div>
           </section>
         )}
 
         {activeTab === 'optimize' && (
           <section id="optimize" className="section-block">
-            <div className="section-kicker">Optimize</div>
             <Suspense fallback={sectionFallback}>
               <ScenarioAnalysis
                 baseInputs={inputs}
@@ -190,7 +191,6 @@ export default function App() {
 
         {activeTab === 'learn' && (
           <section id="learn" className="section-block">
-            <div className="section-kicker">Learn</div>
             <Suspense fallback={sectionFallback}>
               <GlossaryView results={results} inputs={inputs} />
               <MethodologyPanel />
@@ -200,7 +200,6 @@ export default function App() {
 
         {activeTab === 'assistant' && (
           <section id="assistant" className="section-block">
-            <div className="section-kicker">Assistant</div>
             <Suspense fallback={sectionFallback}>
               <LearningAssistant results={results} inputs={inputs} />
             </Suspense>

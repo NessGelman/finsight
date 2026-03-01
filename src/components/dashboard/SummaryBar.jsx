@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { SPEED } from '../../data/speedData';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 
 export function SummaryBar({ results, selectedProduct }) {
@@ -32,37 +31,30 @@ export function SummaryBar({ results, selectedProduct }) {
   if (!summary) return null;
 
   const display = selected || summary.best;
-  const speed = SPEED[display.id]?.label;
   const isSelected = !!selected;
 
   return (
-    <div className={`summary-bar${isSelected ? ' summary-bar--selected' : ''}`}>
-      <span className="summary-star">{isSelected ? '◉' : '★'}</span>
-      <span className="summary-best-label">{isSelected ? 'Selected:' : 'Best:'}</span>
-      <span className="summary-dot" style={{ backgroundColor: display.color }} />
-      <span className="summary-best-label">{display.label}</span>
-      <span className="summary-sep">·</span>
-      <span className="summary-detail">{formatCurrency(display.totalCost)} total</span>
-      <span className="summary-sep">·</span>
-      <span className="summary-detail">{formatPercent(display.sac)} SAC</span>
-      <span className="summary-sep">·</span>
-      <span className="summary-detail">{formatCurrency(display.monthlyPayment)}/mo</span>
-      {speed && (
-        <>
-          <span className="summary-sep">·</span>
-          <span className="summary-detail">{speed}</span>
-        </>
-      )}
+    <div className="card-best" style={{ marginBottom: '16px' }}>
+      <div style={{ minWidth: 0 }}>
+        <div className="best-eyebrow">{isSelected ? 'Selected Option' : 'Best Option'}</div>
+        <div className="best-name">{display.label}</div>
+        <div className="best-metrics">
+          Cost: <strong>{formatCurrency(display.totalCost)}</strong> · EAC: <strong>{formatPercent(display.sac)}</strong>
+          {display.burdenRatio != null && (
+            <> · <strong>{formatPercent(display.burdenRatio)}</strong> of free cashflow</>
+          )}
+        </div>
 
-      {/* Savings callout or spread */}
-      {!isSelected && summary.savings > 0 ? (
-        <span className="summary-spread">
-          Save {formatCurrency(summary.savings)} vs {summary.worst.shortLabel}
-        </span>
-      ) : (
-        <span className="summary-spread">
-          Spread: {formatCurrency(summary.min)} – {formatCurrency(summary.max)}
-        </span>
+        {/* Only show savings callout if we are looking at the Best option and there's a spread */}
+        {!isSelected && summary.savings > 0 && (
+          <div className="best-savings">
+            Saves ~{formatCurrency(summary.savings)} vs highest-cost option.
+          </div>
+        )}
+      </div>
+
+      {!isSelected && (
+        <div className="best-badge">Best estimated cost</div>
       )}
     </div>
   );
