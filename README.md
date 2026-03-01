@@ -1,1 +1,1 @@
-# FinSight
+# finsight
