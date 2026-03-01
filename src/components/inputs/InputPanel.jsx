@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Tooltip } from '../shared/Tooltip';
 import { TOOLTIPS } from '../../data/tooltipContent';
 import { formatCurrency, creditScoreLabel } from '../../utils/formatters';
@@ -18,159 +19,120 @@ const INDUSTRY_OPTIONS = [
   { value: 'cannabis', label: 'Cannabis / CBD' },
 ];
 
+function SidebarSection({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="sidebar-card">
+      <button className="sidebar-section-header" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className="sidebar-section-title">{title}</span>
+        <span className="sidebar-section-icon">{open ? '−' : '+'}</span>
+      </button>
+      {open && <div className="sidebar-section-body">{children}</div>}
+    </div>
+  );
+}
+
+function SliderField({ label, tooltip, value, displayValue, sub, min, max, step, onChange }) {
+  return (
+    <div className="sidebar-field">
+      <div className="sidebar-field-label-row">
+        <span className="sidebar-field-label">
+          {label}
+          {tooltip && <Tooltip content={tooltip} />}
+        </span>
+        <span className="sidebar-field-value">{displayValue}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} />
+      {sub && <span className="sidebar-field-sub">{sub}</span>}
+    </div>
+  );
+}
+
 export function InputPanel({ inputs, onUpdate }) {
   const { principal, annualRevenue, fixedExpenses, businessAge, creditScore, loanPurpose, industry } = inputs;
   const monthlyRevenue = Math.round(annualRevenue / 12);
 
   return (
-    <div className="input-panel">
-      {/* Row 1: sliders */}
-      <InputGroup
-        data-accent="blue"
-        label="Loan Amount"
-        tooltip={TOOLTIPS.loanAmount}
-        value={formatCurrency(principal)}
-      >
-        <input
-          type="range"
-          min={5000}
-          max={2000000}
-          step={5000}
+    <div className="input-panel-sidebar">
+
+      <SidebarSection title="Financing">
+        <SliderField
+          label="Loan Amount"
+          tooltip={TOOLTIPS.loanAmount}
           value={principal}
-          onChange={(e) => onUpdate('principal', Number(e.target.value))}
+          displayValue={formatCurrency(principal)}
+          min={5000} max={2000000} step={5000}
+          onChange={v => onUpdate('principal', v)}
         />
-      </InputGroup>
-
-      <InputGroup
-        data-accent="green"
-        label="Annual Revenue"
-        tooltip={TOOLTIPS.annualRevenue}
-        value={formatCurrency(annualRevenue)}
-        sub={`${formatCurrency(monthlyRevenue)}/mo`}
-      >
-        <input
-          type="range"
-          min={50000}
-          max={10000000}
-          step={50000}
-          value={annualRevenue}
-          onChange={(e) => onUpdate('annualRevenue', Number(e.target.value))}
-        />
-      </InputGroup>
-
-      <InputGroup
-        data-accent="purple"
-        label="Business Age"
-        tooltip={TOOLTIPS.businessAge}
-        value={`${businessAge} yr`}
-        sub={businessAge < 2 ? 'Startup — higher rates' : null}
-      >
-        <input
-          type="range"
-          min={0}
-          max={20}
-          step={1}
-          value={businessAge}
-          onChange={(e) => onUpdate('businessAge', Number(e.target.value))}
-        />
-      </InputGroup>
-
-      <InputGroup
-        data-accent="amber"
-        label="Credit Score"
-        tooltip={TOOLTIPS.creditScore}
-        value={creditScore}
-        sub={creditScoreLabel(creditScore)}
-      >
-        <input
-          type="range"
-          min={300}
-          max={850}
-          step={10}
-          value={creditScore}
-          onChange={(e) => onUpdate('creditScore', Number(e.target.value))}
-        />
-        <div className="credit-score-bar" />
-      </InputGroup>
-
-      {/* Row 2: Loan Purpose + Industry */}
-      <InputGroup
-        data-accent="blue"
-        label="Loan Purpose"
-        tooltip={TOOLTIPS.loanPurpose}
-        value={null}
-        row2
-        span2
-      >
-        <div className="purpose-toggle">
-          {LOAN_PURPOSE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              className={`purpose-btn${loanPurpose === opt.value ? ' active' : ''}`}
-              onClick={() => onUpdate('loanPurpose', opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="sidebar-field">
+          <span className="sidebar-field-label">Purpose</span>
+          <div className="purpose-toggle-vert">
+            {LOAN_PURPOSE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`purpose-btn-vert${loanPurpose === opt.value ? ' active' : ''}`}
+                onClick={() => onUpdate('loanPurpose', opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </InputGroup>
+      </SidebarSection>
 
-      <InputGroup
-        data-accent="green"
-        label="Industry"
-        tooltip={TOOLTIPS.industry}
-        value={null}
-        row2
-      >
-        <select
-          className="industry-select"
-          value={industry}
-          onChange={(e) => onUpdate('industry', e.target.value)}
-        >
-          {INDUSTRY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-      </InputGroup>
-
-      <InputGroup
-        data-accent="amber"
-        label="Monthly Fixed Costs"
-        tooltip={TOOLTIPS.fixedExpenses || "Estimated total fixed expenses per month"}
-        value={formatCurrency(fixedExpenses)}
-        row2
-      >
-        <input
-          type="range"
-          min={0}
-          max={500000}
-          step={1000}
-          value={fixedExpenses}
-          onChange={(e) => onUpdate('fixedExpenses', Number(e.target.value))}
+      <SidebarSection title="Business">
+        <SliderField
+          label="Annual Revenue"
+          tooltip={TOOLTIPS.annualRevenue}
+          value={annualRevenue}
+          displayValue={formatCurrency(annualRevenue)}
+          sub={`${formatCurrency(monthlyRevenue)}/mo`}
+          min={50000} max={10000000} step={50000}
+          onChange={v => onUpdate('annualRevenue', v)}
         />
-      </InputGroup>
-    </div>
-  );
-}
+        <SliderField
+          label="Business Age"
+          tooltip={TOOLTIPS.businessAge}
+          value={businessAge}
+          displayValue={`${businessAge} yr`}
+          sub={businessAge < 2 ? 'Startup — higher rates' : null}
+          min={0} max={20} step={1}
+          onChange={v => onUpdate('businessAge', v)}
+        />
+        <div className="sidebar-field">
+          <span className="sidebar-field-label">Industry</span>
+          <select
+            className="sidebar-select"
+            value={industry}
+            onChange={e => onUpdate('industry', e.target.value)}
+          >
+            {INDUSTRY_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      </SidebarSection>
 
-function InputGroup({ label, tooltip, value, sub, children, 'data-accent': accent, row2, span2 }) {
-  const cn = [
-    'input-group',
-    row2 ? 'input-group--row2' : '',
-    span2 ? 'input-group--span2' : '',
-  ].filter(Boolean).join(' ');
+      <SidebarSection title="Risk">
+        <SliderField
+          label="Credit Score"
+          tooltip={TOOLTIPS.creditScore}
+          value={creditScore}
+          displayValue={creditScore}
+          sub={creditScoreLabel(creditScore)}
+          min={300} max={850} step={10}
+          onChange={v => onUpdate('creditScore', v)}
+        />
+        <SliderField
+          label="Monthly Fixed Costs"
+          tooltip={TOOLTIPS.fixedExpenses || 'Estimated total fixed expenses per month'}
+          value={fixedExpenses}
+          displayValue={formatCurrency(fixedExpenses)}
+          min={0} max={500000} step={1000}
+          onChange={v => onUpdate('fixedExpenses', v)}
+        />
+      </SidebarSection>
 
-  return (
-    <div className={cn} data-accent={accent}>
-      <div className="input-label-row">
-        <span className="input-label">
-          {label}
-          {tooltip && <Tooltip content={tooltip} />}
-        </span>
-        {value != null && <span className="input-value">{value}</span>}
-      </div>
-      {children}
-      {sub && <span className="input-sub">{sub}</span>}
     </div>
   );
 }
