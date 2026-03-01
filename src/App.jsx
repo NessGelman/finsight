@@ -129,19 +129,22 @@ export default function App() {
     }
   }, [inputs]);
 
-  return (
-    <AppShell>
-      <TopBar
-        rates={rates}
-        ratesStatus={ratesStatus}
-        results={results}
-        inputs={inputs}
-        onReset={resetInputs}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+return (
+  <AppShell>
+    <TopBar
+      rates={rates}
+      ratesStatus={ratesStatus}
+      results={results}
+      inputs={inputs}
+      onReset={resetInputs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    />
 
-      <InputPanel inputs={inputs} onUpdate={updateInput} />
+    <div className="app-grid">
+      <aside className="app-left">
+        <InputPanel inputs={inputs} onUpdate={updateInput} />
+      </aside>
 
       <main className="main-content">
         {activeTab === 'compare' && (
@@ -168,20 +171,11 @@ export default function App() {
         {activeTab === 'optimize' && (
           <section id="optimize" className="section-block">
             <Suspense fallback={sectionFallback}>
-              <ScenarioAnalysis
-                baseInputs={inputs}
-                baseResults={results}
-                liveRates={rates}
-              />
+              <ScenarioAnalysis baseInputs={inputs} baseResults={results} liveRates={rates} />
             </Suspense>
             <div className="optimize-bottom-grid">
               <Suspense fallback={sectionFallback}>
-                <TradeoffChart
-                  results={results}
-                  selectedProduct={selectedProduct}
-                  onSelectProduct={setSelectedProduct}
-                  activeFilters={activeFilter !== 'all' ? [activeFilter] : []}
-                />
+                <TradeoffChart results={results} selectedProduct={selectedProduct} onSelectProduct={setSelectedProduct} activeFilters={activeFilter !== 'all' ? [activeFilter] : []} />
                 <SensitivityChart inputs={inputs} liveRates={rates} />
                 <FundingTimeline results={results} />
               </Suspense>
@@ -206,6 +200,7 @@ export default function App() {
           </section>
         )}
       </main>
-    </AppShell>
-  );
+    </div>
+  </AppShell>
+);
 }
