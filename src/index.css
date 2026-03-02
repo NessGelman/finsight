@@ -99,6 +99,12 @@ input {
     var(--bg-base);
   scrollbar-width: thin;
   scrollbar-color: var(--border-accent) transparent;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+}
+
+.sidebar.collapsed {
+  width: 72px;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -310,8 +316,8 @@ section {
 .sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 14px 10px;
+  gap: 12px;
+  padding: 14px 14px;
   border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
   position: sticky;
@@ -320,6 +326,43 @@ section {
   background:
     radial-gradient(500px 300px at 20% -20%, rgba(34, 211, 238, 0.07), transparent 70%),
     var(--bg-base);
+  min-height: 56px;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-header-expanded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.sidebar-header-expanded .sidebar-reset-btn {
+  margin-left: auto;
+}
+
+.input-panel.is-collapsed .sidebar-header {
+  justify-content: center;
+  padding: 14px 0;
+  gap: 0;
 }
 
 .sidebar-reset-btn {
@@ -413,6 +456,42 @@ section {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* ─── Mini Sidebar Content ──────────────────────────────────────────────── */
+.sidebar-mini-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+}
+
+.mini-item {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.mini-item:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.mini-label {
+  font-size: 10px;
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 /* ─── Industry select ────────────────────────────────────────────────────── */
@@ -2686,6 +2765,7 @@ input[type='range']::-moz-range-thumb {
   .app-grid {
     grid-template-columns: 1fr;
   }
+
   .app-left {
     max-height: none;
     overflow: visible;
