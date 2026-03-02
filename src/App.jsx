@@ -44,9 +44,13 @@ const DEFAULT_INPUTS = {
   creditScore: 700,
   loanPurpose: 'any',
   industry: 'general',
+  collateral: 'none',
+  employeeCount: 10,
+  preferredTermMonths: 36,
+  desiredMonthlyPayment: 3000,
 };
 
-const INPUTS_STORAGE_KEY = 'finsight:inputs:v1';
+const INPUTS_STORAGE_KEY = 'finsight:inputs:v2';
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -59,6 +63,9 @@ function sanitizeInputs(raw) {
   const fixedExpenses = Number(safe.fixedExpenses);
   const businessAge = Number(safe.businessAge);
   const creditScore = Number(safe.creditScore);
+  const employeeCount = Number(safe.employeeCount);
+  const preferredTermMonths = Number(safe.preferredTermMonths);
+  const desiredMonthlyPayment = Number(safe.desiredMonthlyPayment);
 
   return {
     principal: clamp(Number.isFinite(principal) ? principal : DEFAULT_INPUTS.principal, 5000, 2000000),
@@ -66,12 +73,18 @@ function sanitizeInputs(raw) {
     fixedExpenses: clamp(Number.isFinite(fixedExpenses) ? fixedExpenses : DEFAULT_INPUTS.fixedExpenses, 0, 500000),
     businessAge: clamp(Number.isFinite(businessAge) ? businessAge : DEFAULT_INPUTS.businessAge, 0, 20),
     creditScore: clamp(Number.isFinite(creditScore) ? creditScore : DEFAULT_INPUTS.creditScore, 300, 850),
+    employeeCount: clamp(Number.isFinite(employeeCount) ? employeeCount : DEFAULT_INPUTS.employeeCount, 1, 500),
+    preferredTermMonths: clamp(Number.isFinite(preferredTermMonths) ? preferredTermMonths : DEFAULT_INPUTS.preferredTermMonths, 3, 120),
+    desiredMonthlyPayment: clamp(Number.isFinite(desiredMonthlyPayment) ? desiredMonthlyPayment : DEFAULT_INPUTS.desiredMonthlyPayment, 500, 50000),
     loanPurpose: ['any', 'workingCapital', 'equipment', 'realEstate'].includes(safe.loanPurpose)
       ? safe.loanPurpose
       : DEFAULT_INPUTS.loanPurpose,
     industry: ['general', 'foodBeverage', 'healthcare', 'technology', 'construction', 'cannabis'].includes(safe.industry)
       ? safe.industry
       : DEFAULT_INPUTS.industry,
+    collateral: ['none', 'partial', 'full'].includes(safe.collateral)
+      ? safe.collateral
+      : DEFAULT_INPUTS.collateral,
   };
 }
 
@@ -129,22 +142,17 @@ export default function App() {
     }
   }, [inputs]);
 
-return (
-  <AppShell>
-    <TopBar
-      rates={rates}
-      ratesStatus={ratesStatus}
-      results={results}
-      inputs={inputs}
-      onReset={resetInputs}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-    />
-
-    <div className="app-grid">
-      <aside className="app-left">
-        <InputPanel inputs={inputs} onUpdate={updateInput} />
-      </aside>
+  return (
+    <AppShell sidebar={<InputPanel inputs={inputs} onUpdate={updateInput} onReset={resetInputs} />}>
+      <TopBar
+        rates={rates}
+        ratesStatus={ratesStatus}
+        results={results}
+        inputs={inputs}
+        onReset={resetInputs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       <main className="main-content">
         {activeTab === 'compare' && (
@@ -200,7 +208,6 @@ return (
           </section>
         )}
       </main>
-    </div>
-  </AppShell>
-);
+    </AppShell>
+  );
 }
