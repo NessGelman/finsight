@@ -10,6 +10,8 @@ import { ComparisonTable } from './components/dashboard/ComparisonTable';
 import { useFinancingResults } from './hooks/useFinancingResults';
 import { useLiveRates } from './hooks/useLiveRates';
 import { parseShareParams } from './utils/exportHelpers';
+import { calculateAllOptions } from './engine/financingCalculator';
+import { AmortizationModal } from './components/dashboard/AmortizationModal';
 
 const CostBreakdown = lazy(() =>
   import('./components/dashboard/CostBreakdown').then((m) => ({ default: m.CostBreakdown })),
@@ -103,11 +105,24 @@ function getInitialInputs() {
 
 export default function App() {
   const [inputs, setInputs] = useState(getInitialInputs);
+  const [theme, setTheme] = useState(() => localStorage.getItem('finsight:theme') || 'dark');
+  const [savedScenario, setSavedScenario] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [strategy, setStrategy] = useState('none');
   const [activeTab, setActiveTab] = useState('compare');
+  const [scheduleRow, setScheduleRow] = useState(null);
 
   const { rates, status: ratesStatus } = useLiveRates();
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.className = theme;
+    localStorage.setItem('finsight:theme', theme);
+  }, [theme]);
 
   const updateInput = useCallback((key, value) => {
     setInputs((prev) => sanitizeInputs({ ...prev, [key]: value }));
@@ -117,18 +132,44 @@ export default function App() {
     setInputs(DEFAULT_INPUTS);
     setSelectedProduct(null);
     setActiveFilter('all');
+    setStrategy('none');
   }, []);
+
+  const saveScenario = useCallback(() => {
+    setSavedScenario({
+      inputs: { ...inputs },
+      results: calculateAllOptions(inputs, rates),
+      timestamp: new Date().toLocaleTimeString()
+    });
+  }, [inputs, rates]);
 
   const rawResults = useFinancingResults(inputs, rates);
 
-  // Tag results with _matchesFilter for dimming
+  // Apply Strategy Logic
+  const processedResults = useMemo(() => {
+    if (!rawResults) return [];
+    let list = [...rawResults];
+
+    if (strategy === 'speed') {
+      list.sort((a, b) => {
+        const speedMap = { '1-2 days': 1, '3-7 days': 2, '1-2 weeks': 3, '4-8 weeks': 4 };
+        return (speedMap[a.speed] || 99) - (speedMap[b.speed] || 99);
+      });
+    } else if (strategy === 'cost') {
+      list.sort((a, b) => a.totalCost - b.totalCost);
+    } else if (strategy === 'cashflow') {
+      list.sort((a, b) => a.monthlyPayment - b.monthlyPayment);
+    }
+
+    return list;
+  }, [rawResults, strategy]);
+
   const results = useMemo(() => {
-    if (!rawResults) return rawResults;
-    return rawResults.map((r) => ({
+    return processedResults.map((r) => ({
       ...r,
-      _matchesFilter: activeFilter === 'all' ? true : matchesFilter(r, activeFilter, rawResults),
+      _matchesFilter: activeFilter === 'all' ? true : matchesFilter(r, activeFilter, processedResults),
     }));
-  }, [rawResults, activeFilter]);
+  }, [processedResults, activeFilter]);
 
   const sectionFallback = (
     <div className="section-loading">Loading module...</div>
@@ -152,19 +193,71 @@ export default function App() {
         onReset={resetInputs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <main className="main-content">
         {activeTab === 'compare' && (
           <section id="compare" className="section-block section-block--compare">
             <SummaryBar results={results} selectedProduct={selectedProduct} />
+
+            <div className="strategy-row">
+              <span className="strategy-label">Optimization Strategy:</span>
+              <div className="strategy-pills">
+                <button
+                  className={`strategy-pill ${strategy === 'none' ? 'active' : ''}`}
+                  onClick={() => setStrategy('none')}
+                >
+                  Standard
+                </button>
+                <button
+                  className={`strategy-pill ${strategy === 'speed' ? 'active' : ''}`}
+                  onClick={() => setStrategy('speed')}
+                >
+                  Max Speed
+                </button>
+                <button
+                  className={`strategy-pill ${strategy === 'cost' ? 'active' : ''}`}
+                  onClick={() => setStrategy('cost')}
+                >
+                  Lowest Cost
+                </button>
+                <button
+                  className={`strategy-pill ${strategy === 'cashflow' ? 'active' : ''}`}
+                  onClick={() => setStrategy('cashflow')}
+                >
+                  Cashflow First
+                </button>
+              </div>
+
+              <button
+                className="top-bar-btn"
+                style={{ marginLeft: 'auto', fontSize: '10px' }}
+                onClick={saveScenario}
+              >
+                {savedScenario ? '↑ Update Stored Scenario' : '💾 Store for Comparison'}
+              </button>
+            </div>
+
             <div className="compare-data-block">
               <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} results={results} />
+
+              {savedScenario && (
+                <div className="scenario-info-bar" style={{ padding: '6px 20px', background: 'var(--accent-dim)', fontSize: '11px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Comparing against stored scenario from {savedScenario.timestamp} (${(savedScenario.inputs.principal / 1000).toFixed(0)}k @ {savedScenario.inputs.creditScore} CS)</span>
+                  <button onClick={() => setSavedScenario(null)} style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontWeight: 'bold' }}>✕ Clear</button>
+                </div>
+              )}
+
               <div className="compare-grid">
                 <ComparisonTable
                   results={results}
+                  savedResults={savedScenario?.results}
                   selectedProduct={selectedProduct}
                   onSelectProduct={setSelectedProduct}
+                  strategy={strategy}
+                  onShowSchedule={setScheduleRow}
                 />
               </div>
               <div className="compare-bottom-grid">
@@ -208,6 +301,13 @@ export default function App() {
           </section>
         )}
       </main>
+
+      {scheduleRow && (
+        <AmortizationModal
+          product={scheduleRow}
+          onClose={() => setScheduleRow(null)}
+        />
+      )}
     </AppShell>
   );
 }

@@ -173,14 +173,14 @@ export function buildBaseParams(liveRates) {
   const ccRate = liveRates?.creditCard?.value ?? 21.5;
 
   return {
-    creditCard:         { apr: ccRate,        termMonths: 18 },
-    sba:                { apr: prime + 2.5,   termMonths: 84 },
-    lineOfCredit:       { apr: prime + 4.5,   termMonths: 12 },
-    mca:                { factorRate: 1.35,   termMonths: 9 },
-    invoiceFactoring:   { monthlyFeeRate: 2.5, termMonths: 4 },
-    equipmentFinancing: { apr: prime + 1.5,   termMonths: 48 },
-    termLoan:           { apr: prime + 7.5,   termMonths: 36 },
-    revenueBased:       { capRate: 1.30 },
+    creditCard: { apr: ccRate, termMonths: 18 },
+    sba: { apr: prime + 2.5, termMonths: 84 },
+    lineOfCredit: { apr: prime + 4.5, termMonths: 12 },
+    mca: { factorRate: 1.35, termMonths: 9 },
+    invoiceFactoring: { monthlyFeeRate: 2.5, termMonths: 4 },
+    equipmentFinancing: { apr: prime + 1.5, termMonths: 48 },
+    termLoan: { apr: prime + 7.5, termMonths: 36 },
+    revenueBased: { capRate: 1.30 },
   };
 }
 
@@ -230,9 +230,83 @@ function getEligibility(id, { creditScore, businessAge, annualRevenue, principal
   return warnings;
 }
 
+// ─── Approval Odds Logic ──────────────────────────────────────────────────
+function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry }) {
+  let score = 100;
+
+  // Global modifiers
+  if (creditScore < 550) score -= 40;
+  if (creditScore < 600) score -= 20;
+  if (creditScore > 740) score += 10;
+  if (businessAge < 1) score -= 30;
+  if (businessAge > 5) score += 15;
+
+  // Product specific logic
+  switch (id) {
+    case 'sba':
+      if (creditScore < 640) score -= 50;
+      if (businessAge < 2) score -= 40;
+      if (industry === 'cannabis') score = 0;
+      break;
+    case 'mca':
+      score += 20; // MCA is easy to get
+      if (annualRevenue < principal) score -= 50;
+      break;
+    case 'lineOfCredit':
+      if (creditScore < 680) score -= 30;
+      break;
+    case 'revenueBased':
+      if (annualRevenue < 150000) score -= 30;
+      if (industry === 'technology') score += 10;
+      break;
+    default:
+      break;
+  }
+
+  return Math.min(100, Math.max(0, score));
+}
+
+// ─── Schedule generator ─────────────────────────────────────────────────────
+function generateSchedule(principal, monthlyPayment, termMonths, apr) {
+  const schedule = [];
+  let remaining = principal;
+  const monthlyRate = apr / 100 / 12;
+
+  for (let m = 1; m <= Math.min(termMonths, 120); m++) {
+    const interest = remaining * monthlyRate;
+    const principalPaid = monthlyPayment - interest;
+    remaining = Math.max(0, remaining - principalPaid);
+
+    schedule.push({
+      month: m,
+      payment: monthlyPayment,
+      interest,
+      principal: principalPaid,
+      remaining
+    });
+
+    if (remaining <= 0) break;
+  }
+  return schedule;
+}
+
 // ─── Master orchestrator ─────────────────────────────────────────────────────
 
-export function calculateAllOptions({ principal, annualRevenue, businessAge, creditScore, loanPurpose = 'any', industry = 'general' }, liveRates = null) {
+const SPEED_MAP = {
+  'creditCard': 1, // 1-2 days
+  'mca': 2,        // 3-7 days
+  'lineOfCredit': 1, // 1-2 days
+  'invoiceFactoring': 2,
+  'revenueBased': 2,
+  'sba': 4,        // 4-8 weeks
+  'equipmentFinancing': 3, // 1-2 weeks
+  'termLoan': 3,
+};
+
+export function calculateAllOptions(
+  { principal, annualRevenue, businessAge, creditScore, loanPurpose = 'any', industry = 'general' },
+  liveRates = null
+) {
   const monthlyFreeCashflow = (annualRevenue * 0.15) / 12;
 
   const products = [
@@ -278,10 +352,18 @@ export function calculateAllOptions({ principal, annualRevenue, businessAge, cre
         calc = { totalCost: 0, totalInterest: 0, interestAmount: 0, feeAmount: 0, monthlyPayment: 0, sac: 0, termMonths: 12 };
     }
 
+    const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry });
+
+    // Generate sample schedule (first 12 months for brevity in previews, or full)
+    const schedule = generateSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0);
+
     return {
       id,
       ...calc,
       params,
+      likelihood,
+      schedule,
+      speedOrder: SPEED_MAP[id] || 99,
       freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : 0,
       eligibilityWarnings: getEligibility(id, { creditScore, businessAge, annualRevenue, principal, loanPurpose, industry }),
     };
