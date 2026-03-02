@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useSort } from '../../hooks/useSort';
 import { Tooltip } from '../shared/Tooltip';
 import { TOOLTIPS } from '../../data/tooltipContent';
@@ -36,28 +36,29 @@ function getLikelihoodLabel(val) {
   return 'Low';
 }
 
-function isHardBlocked(row) {
-  return row.eligibilityWarnings?.some((w) => /requires?/i.test(w));
-}
-
 export function ComparisonTable({ results, savedResults, selectedProduct, onSelectProduct, strategy, onShowSchedule }) {
-  const defaultKey = useMemo(() => {
-    if (strategy === 'speed') return 'speed'; // Note: speed is not sortable yet, I'll fix that
+  // Determine initial sort key based on strategy
+  const initialKey = useMemo(() => {
+    if (strategy === 'speed') return 'speedOrder';
     if (strategy === 'cost') return 'totalCost';
     if (strategy === 'cashflow') return 'monthlyPayment';
     return 'totalCost';
   }, [strategy]);
 
-  const { sorted, sortKey, sortDir, onSort } = useSort(results, defaultKey, 'asc');
+  const { sorted, sortKey, sortDir, onSort } = useSort(results, initialKey, 'asc');
   const [popoverId, setPopoverId] = useState(null);
   const tableRef = useRef(null);
 
-  // Force sort when strategy changes
+  // Sync sort when strategy changes, but AVOID loops
   useEffect(() => {
-    if (strategy === 'cost') onSort('totalCost');
-    if (strategy === 'cashflow') onSort('monthlyPayment');
-    // speed is tricky because it's a string range, I'll need to update useSort or row data
-  }, [strategy]);
+    if (strategy === 'cost' && sortKey !== 'totalCost') {
+      onSort('totalCost');
+    } else if (strategy === 'cashflow' && sortKey !== 'monthlyPayment') {
+      onSort('monthlyPayment');
+    } else if (strategy === 'speed' && sortKey !== 'speedOrder') {
+      onSort('speedOrder');
+    }
+  }, [strategy, sortKey, onSort]);
 
   useEffect(() => {
     function handlePointerDown(event) {
@@ -65,33 +66,17 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
         setPopoverId(null);
       }
     }
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') setPopoverId(null);
-    }
-
     document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => document.removeEventListener('mousedown', handlePointerDown);
   }, []);
 
   if (!sorted || sorted.length === 0) return null;
-
-  function togglePopover(id, e) {
-    e.stopPropagation();
-    setPopoverId(popoverId === id ? null : id);
-  }
 
   return (
     <div className="comparison-table-section" ref={tableRef}>
       <div className="section-header">
         <span className="section-title">All Options</span>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-          Click headers to sort
-        </span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Click headers to sort</span>
       </div>
 
       <table className="comparison-table">
@@ -117,8 +102,6 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
           {sorted.map((row, idx) => {
             const isSelected = selectedProduct === row.id;
             const isDimmed = row._matchesFilter === false;
-
-            // Scenario Comparison
             const savedRow = savedResults?.find(s => s.id === row.id);
             const costDelta = savedRow ? row.totalCost - savedRow.totalCost : null;
 
@@ -133,14 +116,9 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                 onClick={() => onSelectProduct?.(isSelected ? null : row.id)}
                 style={{ cursor: onSelectProduct ? 'pointer' : undefined }}
               >
-                {/* Rank */}
-                <td>
-                  <span className="option-rank">{idx + 1}</span>
-                </td>
-
-                {/* Option name */}
+                <td><span className="option-rank">{idx + 1}</span></td>
                 <td style={{ boxShadow: `inset 3px 0 0 ${isDimmed ? '#d1d5db' : row.color}` }}>
-                  <div className="option-cell" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div className="option-cell" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="option-name">{row.label}</span>
                       {row.isCheapest && <span className="option-badge-best">Best</span>}
@@ -154,15 +132,7 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                     </button>
                   </div>
                 </td>
-
-                {/* Likelihood */}
-                <td>
-                  <span className={getLikelihoodClass(row.likelihood)}>
-                    {getLikelihoodLabel(row.likelihood)}
-                  </span>
-                </td>
-
-                {/* Total Cost */}
+                <td><span className={getLikelihoodClass(row.likelihood)}>{getLikelihoodLabel(row.likelihood)}</span></td>
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{formatCurrency(row.totalCost)}</span>
@@ -173,53 +143,28 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                     )}
                   </div>
                 </td>
-
-                {/* SAC — heat map cell */}
-                <td>
-                  <span className={sacCellClass(row.sac)}>
-                    {formatPercent(row.sac)}
-                  </span>
-                </td>
-
-                {/* Monthly */}
+                <td><span className={sacCellClass(row.sac)}>{formatPercent(row.sac)}</span></td>
                 <td>{formatCurrency(row.monthlyPayment)}</td>
-
-                {/* FCF % */}
                 <td>{formatPercent(row.freeCashflowPct)}</td>
-
-                {/* Term */}
                 <td style={{ color: 'var(--text-secondary)' }}>{formatMonths(row.termMonths)}</td>
-
-                {/* Speed */}
-                <td>
-                  <span className="speed-cell">{SPEED[row.id]?.label ?? '—'}</span>
-                </td>
-
-                {/* Eligibility — with popover */}
+                <td><span className="speed-cell">{SPEED[row.id]?.label ?? '—'}</span></td>
                 <td style={{ position: 'relative' }}>
                   {row.eligibilityWarnings?.length ? (
                     <>
                       <button
                         className="eligibility-btn eligibility-warn"
-                        onClick={(e) => togglePopover(row.id, e)}
-                        title="Click to see details"
-                      >
-                        ⚠
-                      </button>
+                        onClick={(e) => { e.stopPropagation(); setPopoverId(popoverId === row.id ? null : row.id); }}
+                      >⚠</button>
                       {popoverId === row.id && (
                         <div className="eligibility-popover">
                           <div className="eligibility-popover-title">Eligibility Warnings</div>
                           <ul className="eligibility-popover-list">
-                            {row.eligibilityWarnings.map((w, i) => (
-                              <li key={i}>{w}</li>
-                            ))}
+                            {row.eligibilityWarnings.map((w, i) => (<li key={i}>{w}</li>))}
                           </ul>
                         </div>
                       )}
                     </>
-                  ) : (
-                    <span className="eligibility-ok">✓</span>
-                  )}
+                  ) : (<span className="eligibility-ok">✓</span>)}
                 </td>
               </tr>
             );

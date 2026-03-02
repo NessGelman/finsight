@@ -360,6 +360,7 @@ export function calculateAllOptions(
     return {
       id,
       ...calc,
+      principal,
       params,
       likelihood,
       schedule,

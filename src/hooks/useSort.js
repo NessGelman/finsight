@@ -1,17 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 export function useSort(data, defaultKey = 'totalCost', defaultDir = 'asc') {
   const [sortKey, setSortKey] = useState(defaultKey);
   const [sortDir, setSortDir] = useState(defaultDir);
 
-  function onSort(key) {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
+  const onSort = useCallback((key) => {
+    setSortKey((prevKey) => {
+      if (key === prevKey) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prevKey;
+      }
       setSortDir('asc');
-    }
-  }
+      return key;
+    });
+  }, []);
 
   const sorted = useMemo(() => {
     if (!data || data.length === 0) return [];

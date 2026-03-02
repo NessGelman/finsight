@@ -200,7 +200,7 @@ export default function App() {
       <main className="main-content">
         {activeTab === 'compare' && (
           <section id="compare" className="section-block section-block--compare">
-            <SummaryBar results={results} selectedProduct={selectedProduct} />
+            <SummaryBar results={results} selectedProduct={selectedProduct} strategy={strategy} />
 
             <div className="strategy-row">
               <span className="strategy-label">Optimization Strategy:</span>
