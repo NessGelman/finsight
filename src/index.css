@@ -1,29 +1,27 @@
-.best-badge, .best-savings, .likelihood-pill, .warning-chip {
-    border-radius: 18px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 10px 15px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.card {
-    border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.2);
-    padding: 20px;
-}
-
-.best-badge:hover, .best-savings:hover, .likelihood-pill:hover, .warning-chip:hover {
-    transform: translateY(-2px);
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
 .best-badge {
-    background: linear-gradient(90deg, #ff758c, #ff7eb3);
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 14px;
 }
 
 .best-savings {
-    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    color: #28a745;
+    font-weight: bold;
+    font-size: 14px;
 }
 
-.wrapper {
-    margin: 10px;
+.likelihood-pill {
+    border-radius: 20px;
+    padding: 5px 10px;
+    color: #fff;
 }
+
+.warning-chip {
+    background-color: #ffc107;
+    color: #212529;
+    border-radius: 12px;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+/* Other necessary resets or normalizations to revert to original clean styling */
