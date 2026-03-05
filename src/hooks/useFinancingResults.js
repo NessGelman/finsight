@@ -7,15 +7,28 @@ export function useFinancingResults(inputs, liveRates = null) {
   const ccKey = liveRates?.creditCard?.value ?? null;
 
   return useMemo(() => {
-    const { principal, annualRevenue, businessAge, creditScore } = inputs;
+    const { principal, annualRevenue, businessAge, creditScore, loanPurpose, industry, collateral } = inputs;
     if (!principal || principal <= 0 || !annualRevenue || annualRevenue <= 0) {
       return [];
     }
-    const raw = calculateAllOptions({ principal, annualRevenue, businessAge, creditScore }, liveRates);
+    const raw = calculateAllOptions(
+      { principal, annualRevenue, businessAge, creditScore, loanPurpose, industry, collateral },
+      liveRates,
+    );
     return raw.map((r) => ({
       ...FINANCING_TYPES[r.id],
       ...r,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputs.principal, inputs.annualRevenue, inputs.businessAge, inputs.creditScore, primeKey, ccKey]);
+  }, [
+    inputs.principal,
+    inputs.annualRevenue,
+    inputs.businessAge,
+    inputs.creditScore,
+    inputs.loanPurpose,
+    inputs.industry,
+    inputs.collateral,
+    primeKey,
+    ccKey,
+  ]);
 }

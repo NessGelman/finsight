@@ -22,6 +22,7 @@ export function formatCurrencyExact(val) {
 }
 
 export function formatPercent(val, digits = 1) {
+  if (!Number.isFinite(val)) return '—';
   return `${val.toFixed(digits)}%`;
 }
 

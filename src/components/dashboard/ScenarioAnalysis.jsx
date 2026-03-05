@@ -343,7 +343,7 @@ export function ScenarioAnalysis({ baseInputs, baseResults, liveRates }) {
   const scenarios = useMemo(
     () => generateScenarios(baseInputs, baseResults, liveRates),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [baseInputs.principal, baseInputs.annualRevenue, baseInputs.businessAge, baseInputs.creditScore,
+    [baseInputs.principal, baseInputs.annualRevenue, baseInputs.businessAge, baseInputs.creditScore, baseInputs.collateral,
      liveRates?.prime?.value, liveRates?.creditCard?.value],
   );
 

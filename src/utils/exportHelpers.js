@@ -2,6 +2,7 @@ import { SPEED } from '../data/speedData';
 
 const LOAN_PURPOSES = new Set(['any', 'workingCapital', 'equipment', 'realEstate']);
 const INDUSTRIES = new Set(['general', 'foodBeverage', 'healthcare', 'technology', 'construction', 'cannabis']);
+const COLLATERAL_LEVELS = new Set(['none', 'partial', 'full']);
 
 function escapeCsv(val) {
   const str = String(val ?? '');
@@ -88,6 +89,7 @@ export function copyShareLink(inputs) {
     c: inputs.creditScore,
     lp: inputs.loanPurpose,
     ind: inputs.industry,
+    col: inputs.collateral,
   });
   const url = `${base}?${params.toString()}`;
   if (navigator.clipboard?.writeText) {
@@ -116,6 +118,7 @@ export function parseShareParams() {
 
   const parsedPurpose = params.get('lp');
   const parsedIndustry = params.get('ind');
+  const parsedCollateral = params.get('col');
 
   return {
     principal: Number(params.get('p')) || 100000,
@@ -124,5 +127,6 @@ export function parseShareParams() {
     creditScore: Number(params.get('c')) || 700,
     loanPurpose: LOAN_PURPOSES.has(parsedPurpose) ? parsedPurpose : 'any',
     industry: INDUSTRIES.has(parsedIndustry) ? parsedIndustry : 'general',
+    collateral: COLLATERAL_LEVELS.has(parsedCollateral) ? parsedCollateral : 'none',
   };
 }

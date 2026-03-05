@@ -190,6 +190,14 @@ function creditMultiplier(creditScore) {
   return 1.6;
 }
 
+function collateralRateMultiplier(id, collateral = 'none') {
+  const collateralSensitive = new Set(['sba', 'lineOfCredit', 'equipmentFinancing', 'termLoan']);
+  if (!collateralSensitive.has(id)) return 1.0;
+  if (collateral === 'full') return 0.88;
+  if (collateral === 'partial') return 0.94;
+  return 1.0;
+}
+
 /**
  * Build base rate parameters anchored to live Federal Reserve data when available.
  *
@@ -222,19 +230,20 @@ export function buildBaseParams(liveRates) {
   };
 }
 
-function getParams(id, creditScore, businessAge, liveRates) {
+function getParams(id, creditScore, businessAge, collateral, liveRates) {
   const base = { ...buildBaseParams(liveRates)[id] };
   const cm = creditMultiplier(creditScore);
   const ageMult = businessAge < 2 ? 1.2 : 1.0;
+  const collateralMult = collateralRateMultiplier(id, collateral);
   if (base.apr !== undefined) {
-    base.apr = Math.min(base.apr * cm * ageMult, 99);
+    base.apr = Math.min(base.apr * cm * ageMult * collateralMult, 99);
   }
   return base;
 }
 
 // ─── Eligibility hints ───────────────────────────────────────────────────────
 
-function getEligibility(id, { creditScore, businessAge, annualRevenue, principal, loanPurpose, industry }) {
+function getEligibility(id, { creditScore, businessAge, annualRevenue, principal, loanPurpose, industry, collateral = 'none' }) {
   const warnings = [];
   if (id === 'sba') {
     if (businessAge < 2) warnings.push('SBA typically requires 2+ years in business');
@@ -258,6 +267,9 @@ function getEligibility(id, { creditScore, businessAge, annualRevenue, principal
   if (id === 'equipmentFinancing' && loanPurpose !== 'equipment' && loanPurpose !== 'any') {
     warnings.push('Equipment financing requires an equipment purchase purpose');
   }
+  if ((id === 'sba' || id === 'lineOfCredit' || id === 'termLoan') && collateral === 'none') {
+    warnings.push('No collateral may reduce approval odds and increase lender pricing');
+  }
   if (id === 'revenueBased') {
     if (annualRevenue < 200000) warnings.push('RBF lenders typically require $200K+ annual revenue');
     if (creditScore < 550) warnings.push('Most RBF providers require 550+ credit score');
@@ -269,7 +281,7 @@ function getEligibility(id, { creditScore, businessAge, annualRevenue, principal
 }
 
 // ─── Approval Odds Logic ──────────────────────────────────────────────────
-function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry }) {
+function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry, collateral = 'none' }) {
   let score = 100;
 
   // Global modifiers
@@ -278,6 +290,8 @@ function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principa
   if (creditScore > 740) score += 10;
   if (businessAge < 1) score -= 30;
   if (businessAge > 5) score += 15;
+  if (collateral === 'partial') score += 8;
+  if (collateral === 'full') score += 16;
 
   // Product specific logic
   switch (id) {
@@ -408,7 +422,15 @@ const SPEED_MAP = {
 };
 
 export function calculateAllOptions(
-  { principal, annualRevenue, businessAge, creditScore, loanPurpose = 'any', industry = 'general' },
+  {
+    principal,
+    annualRevenue,
+    businessAge,
+    creditScore,
+    loanPurpose = 'any',
+    industry = 'general',
+    collateral = 'none',
+  },
   liveRates = null
 ) {
   const monthlyFreeCashflow = (annualRevenue * 0.15) / 12;
@@ -425,7 +447,7 @@ export function calculateAllOptions(
   ];
 
   const results = products.map((id) => {
-    const params = getParams(id, creditScore, businessAge, liveRates);
+    const params = getParams(id, creditScore, businessAge, collateral, liveRates);
     let calc;
     switch (id) {
       case 'creditCard':
@@ -456,7 +478,7 @@ export function calculateAllOptions(
         calc = { totalCost: 0, totalInterest: 0, interestAmount: 0, feeAmount: 0, monthlyPayment: 0, sac: 0, eac: 0, termMonths: 12 };
     }
 
-    const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry });
+    const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry, collateral });
 
     const schedule = generateScheduleByProduct(id, calc, params, principal);
 
@@ -469,7 +491,15 @@ export function calculateAllOptions(
       schedule,
       speedOrder: SPEED_MAP[id] || 99,
       freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : 0,
-      eligibilityWarnings: getEligibility(id, { creditScore, businessAge, annualRevenue, principal, loanPurpose, industry }),
+      eligibilityWarnings: getEligibility(id, {
+        creditScore,
+        businessAge,
+        annualRevenue,
+        principal,
+        loanPurpose,
+        industry,
+        collateral,
+      }),
     };
   });
 
