@@ -8,7 +8,7 @@ const TABS = [
   { id: 'assistant', label: 'Assistant' },
 ];
 
-export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab, onTabChange, theme, onToggleTheme }) {
+export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab, onTabChange }) {
   return (
     <div className="top-bar">
       <div className="top-bar-logo">
@@ -54,13 +54,6 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
         </div>
 
         <div className="top-bar-actions" style={{ display: 'flex', gap: '6px' }}>
-          <button
-            className="top-bar-btn"
-            onClick={onToggleTheme}
-            title={theme === 'dark' ? "Switch to Light Mode" : "Dark Mode"}
-          >
-            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
           <button className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
             Reset
           </button>

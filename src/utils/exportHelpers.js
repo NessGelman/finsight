@@ -12,6 +12,15 @@ function escapeCsv(val) {
   return str;
 }
 
+function fmt2(val) {
+  return Number.isFinite(val) ? val.toFixed(2) : '';
+}
+
+function parseNumberOr(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export function exportToCSV(results, inputs) {
   const meta = [
     ['Finsight — Financing Comparison Export'],
@@ -50,7 +59,7 @@ export function exportToCSV(results, inputs) {
     r.sac.toFixed(2),
     (r.eac ?? r.sac).toFixed(2),
     r.vsCheapest.toFixed(2),
-    r.freeCashflowPct.toFixed(2),
+    fmt2(r.freeCashflowPct),
     r.monthlyPayment.toFixed(2),
     r.termMonths,
     SPEED[r.id]?.label ?? '',
@@ -87,6 +96,10 @@ export function copyShareLink(inputs) {
     r: inputs.annualRevenue,
     a: inputs.businessAge,
     c: inputs.creditScore,
+    fx: inputs.fixedExpenses,
+    dmp: inputs.desiredMonthlyPayment,
+    pt: inputs.preferredTermMonths,
+    emp: inputs.employeeCount,
     lp: inputs.loanPurpose,
     ind: inputs.industry,
     col: inputs.collateral,
@@ -121,10 +134,14 @@ export function parseShareParams() {
   const parsedCollateral = params.get('col');
 
   return {
-    principal: Number(params.get('p')) || 100000,
-    annualRevenue: Number(params.get('r')) || 500000,
-    businessAge: Number(params.get('a')) || 3,
-    creditScore: Number(params.get('c')) || 700,
+    principal: parseNumberOr(params.get('p'), 100000),
+    annualRevenue: parseNumberOr(params.get('r'), 500000),
+    businessAge: parseNumberOr(params.get('a'), 3),
+    creditScore: parseNumberOr(params.get('c'), 700),
+    fixedExpenses: parseNumberOr(params.get('fx'), 20000),
+    desiredMonthlyPayment: parseNumberOr(params.get('dmp'), 3000),
+    preferredTermMonths: parseNumberOr(params.get('pt'), 36),
+    employeeCount: parseNumberOr(params.get('emp'), 10),
     loanPurpose: LOAN_PURPOSES.has(parsedPurpose) ? parsedPurpose : 'any',
     industry: INDUSTRIES.has(parsedIndustry) ? parsedIndustry : 'general',
     collateral: COLLATERAL_LEVELS.has(parsedCollateral) ? parsedCollateral : 'none',

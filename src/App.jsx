@@ -105,7 +105,6 @@ function getInitialInputs() {
 
 export default function App() {
   const [inputs, setInputs] = useState(getInitialInputs);
-  const [theme, setTheme] = useState(() => localStorage.getItem('finsight:theme') || 'dark');
   const [savedScenario, setSavedScenario] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -114,15 +113,6 @@ export default function App() {
   const [scheduleRow, setScheduleRow] = useState(null);
 
   const { rates, status: ratesStatus } = useLiveRates();
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.className = theme;
-    localStorage.setItem('finsight:theme', theme);
-  }, [theme]);
 
   const updateInput = useCallback((key, value) => {
     setInputs((prev) => sanitizeInputs({ ...prev, [key]: value }));
@@ -151,10 +141,7 @@ export default function App() {
     let list = [...rawResults];
 
     if (strategy === 'speed') {
-      list.sort((a, b) => {
-        const speedMap = { '1-2 days': 1, '3-7 days': 2, '1-2 weeks': 3, '4-8 weeks': 4 };
-        return (speedMap[a.speed] || 99) - (speedMap[b.speed] || 99);
-      });
+      list.sort((a, b) => (a.speedOrder || 99) - (b.speedOrder || 99));
     } else if (strategy === 'cost') {
       list.sort((a, b) => a.totalCost - b.totalCost);
     } else if (strategy === 'cashflow') {
@@ -193,8 +180,6 @@ export default function App() {
         onReset={resetInputs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
 
       <main className="main-content">

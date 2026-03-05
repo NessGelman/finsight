@@ -1,37 +1,35 @@
 /* ─── Design tokens — aligned with FinSight legacy UI ─────────────────────── */
 :root {
-  /* Dark mode (default) */
-  --bg-base: #0d1117;
-  --bg-panel: #161b22;
-  --bg-surface: #0d1117;
-  --bg-elevated: #21262d;
-  --bg-hover: #30363d;
+  --bg-base: #041325;
+  --bg-panel: #020d1d;
+  --bg-surface: #061a33;
+  --bg-elevated: #0a2343;
+  --bg-hover: #113157;
 
-  --border-subtle: #21262d;
-  --border-default: #30363d;
-  --border-accent: #484f58;
+  --border-subtle: #0f2a4a;
+  --border-default: #1a3f67;
+  --border-accent: #2a5d8f;
 
-  --text-primary: #e6edf3;
-  --text-secondary: #b1bac4;
-  --text-muted: #7d8590;
+  --text-primary: #e4eef9;
+  --text-secondary: #a7bdd5;
+  --text-muted: #7d98b8;
 
-  --accent: #39d0f5;
-  --accent-dim: rgba(57, 208, 245, 0.09);
-  --accent-light: rgba(57, 208, 245, 0.22);
-  --accent-green: #3fb950;
-  --accent-red: #f85149;
-  --accent-amber: #e3b341;
-  --accent-purple: #d2a8ff;
-  --accent-soft: rgba(63, 185, 80, 0.14);
-  --overlay: rgba(1, 4, 9, 0.75);
+  --accent: #2dc8ff;
+  --accent-dim: rgba(45, 200, 255, 0.11);
+  --accent-light: rgba(45, 200, 255, 0.26);
+  --accent-green: #30df84;
+  --accent-red: #ff6b6b;
+  --accent-amber: #f4b34f;
+  --accent-purple: #7ba6ff;
+  --accent-soft: rgba(48, 223, 132, 0.15);
+  --overlay: rgba(3, 14, 29, 0.88);
 
-  /* Likelihood pill colors for dark mode */
-  --pill-high-bg: rgba(63, 185, 80, 0.15);
-  --pill-high-fg: #3fb950;
-  --pill-med-bg: rgba(227, 179, 65, 0.15);
-  --pill-med-fg: #e3b341;
-  --pill-low-bg: rgba(248, 81, 73, 0.15);
-  --pill-low-fg: #f85149;
+  --pill-high-bg: rgba(48, 223, 132, 0.16);
+  --pill-high-fg: #30df84;
+  --pill-med-bg: rgba(244, 179, 79, 0.16);
+  --pill-med-fg: #f4b34f;
+  --pill-low-bg: rgba(255, 107, 107, 0.18);
+  --pill-low-fg: #ff6b6b;
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -51,44 +49,6 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-:root.light {
-  /* Light mode overrides */
-  --bg-base: #f6f8fa;
-  --bg-panel: #ffffff;
-  --bg-surface: #f0f2f5;
-  --bg-elevated: #e5e9ef;
-  --bg-hover: #d0d7de;
-
-  --border-subtle: #d0d7de;
-  --border-default: #bdc4cc;
-  --border-accent: #9198a1;
-
-  --text-primary: #1f2328;
-  --text-secondary: #3d444d;
-  --text-muted: #59636e;
-
-  --accent: #0969da;
-  --accent-dim: rgba(9, 105, 218, 0.07);
-  --accent-light: rgba(9, 105, 218, 0.16);
-  --accent-green: #1a7f37;
-  --accent-red: #cf222e;
-  --accent-amber: #9a6700;
-  --accent-purple: #6e40c9;
-  --accent-soft: rgba(26, 127, 55, 0.1);
-  --overlay: rgba(250, 251, 252, 0.92);
-
-  /* Likelihood pill colors for light mode — darker so they're readable on white */
-  --pill-high-bg: rgba(26, 127, 55, 0.12);
-  --pill-high-fg: #1a7f37;
-  --pill-med-bg: rgba(154, 103, 0, 0.12);
-  --pill-med-fg: #9a6700;
-  --pill-low-bg: rgba(207, 34, 46, 0.12);
-  --pill-low-fg: #cf222e;
-
-  --shadow-sm: 0 1px 3px rgba(31, 35, 40, 0.1);
-  --shadow-card: 0 4px 16px rgba(31, 35, 40, 0.12);
-}
-
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *,
 *::before,
@@ -106,17 +66,11 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-:root:not(.light) body {
+body {
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(57, 208, 245, 0.07), transparent 65%),
-    radial-gradient(900px 400px at 90% -20%, rgba(63, 185, 80, 0.06), transparent 60%),
-    var(--bg-panel);
-}
-
-:root.light body {
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(9, 105, 218, 0.04), transparent 65%),
-    radial-gradient(900px 400px at 90% -20%, rgba(26, 127, 55, 0.04), transparent 60%),
+    radial-gradient(1000px 500px at 6% -12%, rgba(45, 200, 255, 0.13), transparent 60%),
+    radial-gradient(900px 420px at 88% -20%, rgba(48, 223, 132, 0.08), transparent 65%),
+    radial-gradient(1200px 650px at 50% 120%, rgba(20, 58, 97, 0.32), transparent 62%),
     var(--bg-panel);
 }
 
@@ -473,11 +427,6 @@ section {
 
 .input-group:hover {
   background: var(--bg-hover);
-  background: rgba(0, 0, 0, 0.04);
-}
-
-:root.light .input-group:hover {
-  background: rgba(0, 90, 200, 0.03);
 }
 
 .input-group:focus-within {
