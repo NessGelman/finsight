@@ -1,28 +1,37 @@
 /* ─── Design tokens — aligned with FinSight legacy UI ─────────────────────── */
 :root {
-  --bg-base: #0f172a;
-  --bg-panel: #1e293b;
-  --bg-surface: #0f172a;
-  --bg-elevated: #334155;
-  --bg-hover: #475569;
+  /* Dark mode (default) */
+  --bg-base: #0d1117;
+  --bg-panel: #161b22;
+  --bg-surface: #0d1117;
+  --bg-elevated: #21262d;
+  --bg-hover: #30363d;
 
-  --border-subtle: #1e293b;
-  --border-default: #334155;
-  --border-accent: #475569;
+  --border-subtle: #21262d;
+  --border-default: #30363d;
+  --border-accent: #484f58;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+  --text-primary: #e6edf3;
+  --text-secondary: #b1bac4;
+  --text-muted: #7d8590;
 
-  --accent: #22d3ee;
-  --accent-dim: rgba(34, 211, 238, 0.08);
-  --accent-light: rgba(34, 211, 238, 0.22);
-  --accent-green: #4ade80;
-  --accent-red: #f87171;
-  --accent-amber: #fbbf24;
-  --accent-purple: #38bdf8;
-  --accent-soft: rgba(74, 222, 128, 0.14);
-  --overlay: rgba(3, 11, 24, 0.7);
+  --accent: #39d0f5;
+  --accent-dim: rgba(57, 208, 245, 0.09);
+  --accent-light: rgba(57, 208, 245, 0.22);
+  --accent-green: #3fb950;
+  --accent-red: #f85149;
+  --accent-amber: #e3b341;
+  --accent-purple: #d2a8ff;
+  --accent-soft: rgba(63, 185, 80, 0.14);
+  --overlay: rgba(1, 4, 9, 0.75);
+
+  /* Likelihood pill colors for dark mode */
+  --pill-high-bg: rgba(63, 185, 80, 0.15);
+  --pill-high-fg: #3fb950;
+  --pill-med-bg: rgba(227, 179, 65, 0.15);
+  --pill-med-fg: #e3b341;
+  --pill-low-bg: rgba(248, 81, 73, 0.15);
+  --pill-low-fg: #f85149;
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -31,8 +40,8 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
 
   font-family: var(--font-sans);
   font-size: 14px;
@@ -43,25 +52,41 @@
 }
 
 :root.light {
-  --bg-base: #f8fafc;
+  /* Light mode overrides */
+  --bg-base: #f6f8fa;
   --bg-panel: #ffffff;
-  --bg-surface: #f1f5f9;
-  --bg-elevated: #e2e8f0;
-  --bg-hover: #cbd5e1;
+  --bg-surface: #f0f2f5;
+  --bg-elevated: #e5e9ef;
+  --bg-hover: #d0d7de;
 
-  --border-subtle: #e2e8f0;
-  --border-default: #cbd5e1;
-  --border-accent: #94a3b8;
+  --border-subtle: #d0d7de;
+  --border-default: #bdc4cc;
+  --border-accent: #9198a1;
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-primary: #1f2328;
+  --text-secondary: #3d444d;
+  --text-muted: #59636e;
 
-  --accent: #0891b2;
-  --accent-dim: rgba(8, 145, 178, 0.05);
-  --accent-light: rgba(8, 145, 178, 0.12);
-  --accent-soft: rgba(34, 197, 94, 0.1);
-  --overlay: rgba(255, 255, 255, 0.85);
+  --accent: #0969da;
+  --accent-dim: rgba(9, 105, 218, 0.07);
+  --accent-light: rgba(9, 105, 218, 0.16);
+  --accent-green: #1a7f37;
+  --accent-red: #cf222e;
+  --accent-amber: #9a6700;
+  --accent-purple: #6e40c9;
+  --accent-soft: rgba(26, 127, 55, 0.1);
+  --overlay: rgba(250, 251, 252, 0.92);
+
+  /* Likelihood pill colors for light mode — darker so they're readable on white */
+  --pill-high-bg: rgba(26, 127, 55, 0.12);
+  --pill-high-fg: #1a7f37;
+  --pill-med-bg: rgba(154, 103, 0, 0.12);
+  --pill-med-fg: #9a6700;
+  --pill-low-bg: rgba(207, 34, 46, 0.12);
+  --pill-low-fg: #cf222e;
+
+  --shadow-sm: 0 1px 3px rgba(31, 35, 40, 0.1);
+  --shadow-card: 0 4px 16px rgba(31, 35, 40, 0.12);
 }
 
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
@@ -76,11 +101,23 @@
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(34, 211, 238, 0.08), transparent 65%),
-    radial-gradient(900px 400px at 90% -20%, rgba(74, 222, 128, 0.08), transparent 60%),
-    var(--bg-panel);
+  background: var(--bg-panel);
   color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+:root:not(.light) body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(57, 208, 245, 0.07), transparent 65%),
+    radial-gradient(900px 400px at 90% -20%, rgba(63, 185, 80, 0.06), transparent 60%),
+    var(--bg-panel);
+}
+
+:root.light body {
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(9, 105, 218, 0.04), transparent 65%),
+    radial-gradient(900px 400px at 90% -20%, rgba(26, 127, 55, 0.04), transparent 60%),
+    var(--bg-panel);
 }
 
 a {
@@ -702,7 +739,7 @@ section {
   .best-name {
     font-size: 21px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     margin: 0 0 6px;
     line-height: 1.2;
   }
@@ -764,19 +801,20 @@ section {
     gap: 4px;
   }
 
+  /* Uses CSS variables so both modes work correctly */
   .likelihood--high {
-    background: rgba(74, 222, 128, 0.15);
-    color: #4ade80;
+    background: var(--pill-high-bg);
+    color: var(--pill-high-fg);
   }
 
   .likelihood--med {
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
+    background: var(--pill-med-bg);
+    color: var(--pill-med-fg);
   }
 
   .likelihood--low {
-    background: rgba(248, 113, 113, 0.15);
-    color: #f87171;
+    background: var(--pill-low-bg);
+    color: var(--pill-low-fg);
   }
 
   /* ─── Summary bar ────────────────────────────────────────────────────────── */
@@ -2998,6 +3036,7 @@ section {
 }
 
 @media print {
+
   .sidebar,
   .top-bar-tabs,
   .top-bar-btn,
@@ -3026,7 +3065,8 @@ section {
     color: black !important;
   }
 
-  .comparison-table th, .comparison-table td {
+  .comparison-table th,
+  .comparison-table td {
     color: black !important;
     border-color: #eee !important;
   }
