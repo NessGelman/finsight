@@ -1,5 +1,6 @@
 // ─── Amortization helper ─────────────────────────────────────────────────────
 function amortize(principal, apr, termMonths) {
+  if (!Number.isFinite(termMonths) || termMonths <= 0) return 0;
   const monthlyRate = apr / 100 / 12;
   if (monthlyRate === 0) return principal / termMonths;
   return (
@@ -15,6 +16,7 @@ function amortize(principal, apr, termMonths) {
  * P = pmt × [(1 − (1 + r)^−n) / r]
  */
 export function reverseAmortize(monthlyPayment, apr, termMonths) {
+  if (!Number.isFinite(termMonths) || termMonths <= 0) return 0;
   const monthlyRate = apr / 100 / 12;
   if (monthlyRate === 0) return monthlyPayment * termMonths;
   return monthlyPayment * ((1 - Math.pow(1 + monthlyRate, -termMonths)) / monthlyRate);
@@ -320,6 +322,7 @@ function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principa
 
 // ─── Schedule generator ─────────────────────────────────────────────────────
 function generateAmortizedSchedule(principal, monthlyPayment, termMonths, apr, upfrontFee = 0) {
+  if (!Number.isFinite(termMonths) || termMonths <= 0) return [];
   const schedule = [];
   let remaining = principal;
   const monthlyRate = apr / 100 / 12;
@@ -345,6 +348,7 @@ function generateAmortizedSchedule(principal, monthlyPayment, termMonths, apr, u
 }
 
 function generateBalloonSchedule(principal, termMonths, totalInterestAndFees) {
+  if (!Number.isFinite(termMonths) || termMonths <= 0) return [];
   const schedule = [];
   const baseInterest = termMonths > 0 ? totalInterestAndFees / termMonths : 0;
   let remaining = principal;
@@ -366,6 +370,7 @@ function generateBalloonSchedule(principal, termMonths, totalInterestAndFees) {
 }
 
 function generateFixedPaybackSchedule(principal, totalCost, termMonths) {
+  if (!Number.isFinite(termMonths) || termMonths <= 0) return [];
   const schedule = [];
   let remaining = principal;
   const payment = termMonths > 0 ? totalCost / termMonths : 0;
@@ -425,6 +430,7 @@ export function calculateAllOptions(
   {
     principal,
     annualRevenue,
+    fixedExpenses = 0,
     businessAge,
     creditScore,
     loanPurpose = 'any',
@@ -433,7 +439,8 @@ export function calculateAllOptions(
   },
   liveRates = null
 ) {
-  const monthlyFreeCashflow = (annualRevenue * 0.15) / 12;
+  const monthlyRevenue = annualRevenue / 12;
+  const monthlyFreeCashflow = monthlyRevenue - fixedExpenses;
 
   const products = [
     'creditCard',
@@ -490,7 +497,7 @@ export function calculateAllOptions(
       likelihood,
       schedule,
       speedOrder: SPEED_MAP[id] || 99,
-      freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : 0,
+      freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : Number.NaN,
       eligibilityWarnings: getEligibility(id, {
         creditScore,
         businessAge,

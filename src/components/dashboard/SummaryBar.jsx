@@ -55,7 +55,7 @@ export function SummaryBar({ results, selectedProduct, strategy }) {
         <div className="best-name">{display.label}</div>
         <div className="best-metrics">
           Cost: <strong>{formatCurrency(display.totalCost)}</strong> · SAC: <strong>{formatPercent(display.sac)}</strong> · EAC: <strong>{formatPercent(display.eac ?? display.sac)}</strong>
-          {display.freeCashflowPct != null && (
+          {Number.isFinite(display.freeCashflowPct) && (
             <> · <strong>{formatPercent(display.freeCashflowPct)}</strong> buffer utilization</>
           )}
         </div>

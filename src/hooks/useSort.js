@@ -22,7 +22,9 @@ export function useSort(data, defaultKey = 'totalCost', defaultDir = 'asc') {
       const bVal = b[sortKey];
       const dir = sortDir === 'asc' ? 1 : -1;
       if (typeof aVal === 'string') return aVal.localeCompare(bVal) * dir;
-      return (aVal - bVal) * dir;
+      const aNum = Number.isFinite(aVal) ? aVal : Number.POSITIVE_INFINITY;
+      const bNum = Number.isFinite(bVal) ? bVal : Number.POSITIVE_INFINITY;
+      return (aNum - bNum) * dir;
     });
   }, [data, sortKey, sortDir]);
 

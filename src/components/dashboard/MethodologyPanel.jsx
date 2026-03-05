@@ -94,7 +94,7 @@ export function MethodologyPanel() {
             <div className="methodology-section">
               <div className="methodology-section-title">Assumptions</div>
               <ul className="methodology-list">
-                <li><strong>Free Cash Flow</strong> — Estimated at 15% of annual revenue per month. Used for FCF% column.</li>
+                <li><strong>Free Cash Flow</strong> — Estimated as monthly revenue (annual revenue ÷ 12) minus fixed monthly costs. Used for FCF% column.</li>
                 <li><strong>Invoice Factoring</strong> — Input principal is cash needed upfront. Model grosses up invoice face value using an 85% advance rate, then applies monthly fees and a 15% permanent haircut on invoice face value.</li>
                 <li><strong>SBA Guarantee Fee</strong> — 2% for loans ≤$150K, 3% for $150K–$700K, 3.75% for &gt;$700K (on 75% guaranteed portion).</li>
                 <li><strong>Term Loan Origination</strong> — 3% origination fee added to total cost.</li>

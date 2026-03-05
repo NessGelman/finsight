@@ -7,12 +7,21 @@ export function useFinancingResults(inputs, liveRates = null) {
   const ccKey = liveRates?.creditCard?.value ?? null;
 
   return useMemo(() => {
-    const { principal, annualRevenue, businessAge, creditScore, loanPurpose, industry, collateral } = inputs;
+    const {
+      principal,
+      annualRevenue,
+      fixedExpenses,
+      businessAge,
+      creditScore,
+      loanPurpose,
+      industry,
+      collateral,
+    } = inputs;
     if (!principal || principal <= 0 || !annualRevenue || annualRevenue <= 0) {
       return [];
     }
     const raw = calculateAllOptions(
-      { principal, annualRevenue, businessAge, creditScore, loanPurpose, industry, collateral },
+      { principal, annualRevenue, fixedExpenses, businessAge, creditScore, loanPurpose, industry, collateral },
       liveRates,
     );
     return raw.map((r) => ({
@@ -23,6 +32,7 @@ export function useFinancingResults(inputs, liveRates = null) {
   }, [
     inputs.principal,
     inputs.annualRevenue,
+    inputs.fixedExpenses,
     inputs.businessAge,
     inputs.creditScore,
     inputs.loanPurpose,

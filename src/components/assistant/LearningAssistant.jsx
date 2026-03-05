@@ -59,8 +59,9 @@ function pickTopOptions(results, focus) {
   }
 
   if (focus === 'risk') {
+    const burden = (val) => (Number.isFinite(val) ? val : Number.POSITIVE_INFINITY);
     return [...results]
-      .sort((a, b) => a.freeCashflowPct - b.freeCashflowPct || a.totalCost - b.totalCost)
+      .sort((a, b) => burden(a.freeCashflowPct) - burden(b.freeCashflowPct) || a.totalCost - b.totalCost)
       .slice(0, 3);
   }
 
