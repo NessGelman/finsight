@@ -59,7 +59,7 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
             onClick={onToggleTheme}
             title={theme === 'dark' ? "Switch to Light Mode" : "Dark Mode"}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
           </button>
           <button className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
             Reset
