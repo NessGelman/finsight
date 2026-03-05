@@ -94,6 +94,7 @@ export function MethodologyPanel() {
                 <li><strong>Term Loan Origination</strong> — 3% origination fee added to total cost.</li>
                 <li><strong>Business Age</strong> — If under 2 years, applies a 1.2× rate multiplier reflecting higher lender risk.</li>
                 <li><strong>Revenue-Based Financing</strong> — Uses a 1.30× repayment cap with modeled term capped at 48 months; monthly payment is normalized to match total payback over that term.</li>
+                <li><strong>Monthly Column</strong> — Displays average monthly outflow (total payback ÷ term) so payment burden is comparable across products with different repayment structures.</li>
               </ul>
             </div>
 

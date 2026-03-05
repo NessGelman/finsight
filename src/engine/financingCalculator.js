@@ -40,13 +40,23 @@ function calcSBA(principal, apr, termMonths) {
   else if (principal > 150000) guaranteeFeeRate = 0.03;
   const guaranteeFee = guaranteedPortion * guaranteeFeeRate;
 
-  const monthlyPayment = amortize(principal, apr, termMonths);
-  const interestAmount = monthlyPayment * termMonths - principal;
+  const contractualMonthlyPayment = amortize(principal, apr, termMonths);
+  const interestAmount = contractualMonthlyPayment * termMonths - principal;
   const feeAmount = guaranteeFee;
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
+  const monthlyPayment = totalCost / termMonths;
   const sac = (totalInterest / principal) * (12 / termMonths) * 100;
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths };
+  return {
+    totalCost,
+    totalInterest,
+    interestAmount,
+    feeAmount,
+    monthlyPayment,
+    scheduleMonthlyPayment: contractualMonthlyPayment,
+    sac,
+    termMonths,
+  };
 }
 
 function calcLineOfCredit(principal, apr, termMonths) {
@@ -64,7 +74,7 @@ function calcLineOfCredit(principal, apr, termMonths) {
     totalInterest,
     interestAmount,
     feeAmount,
-    monthlyPayment: monthlyInterest + annualFee / 12,
+    monthlyPayment: totalCost / termMonths,
     sac,
     termMonths,
   };
@@ -114,7 +124,7 @@ function calcRBF(principal, capRate, annualRevenue) {
   const unconstrainedTerm = targetRevenueSharePayment > 0
     ? Math.ceil(totalCost / targetRevenueSharePayment)
     : 48;
-  const estimatedTerm = Math.min(Math.max(1, unconstrainedTerm), 48);
+  const estimatedTerm = Math.min(Math.max(6, unconstrainedTerm), 48);
   // Keep payment/term/total mathematically coherent when term is capped.
   const monthlyPayment = totalCost / estimatedTerm;
   const interestAmount = 0;
@@ -136,13 +146,23 @@ function calcEquipmentFinancing(principal, apr, termMonths) {
 function calcTermLoan(principal, apr, termMonths) {
   // 3% origination fee
   const originationFee = principal * 0.03;
-  const monthlyPayment = amortize(principal, apr, termMonths);
-  const interestAmount = monthlyPayment * termMonths - principal;
+  const contractualMonthlyPayment = amortize(principal, apr, termMonths);
+  const interestAmount = contractualMonthlyPayment * termMonths - principal;
   const feeAmount = originationFee;
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
+  const monthlyPayment = totalCost / termMonths;
   const sac = (totalInterest / principal) * (12 / termMonths) * 100;
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths };
+  return {
+    totalCost,
+    totalInterest,
+    interestAmount,
+    feeAmount,
+    monthlyPayment,
+    scheduleMonthlyPayment: contractualMonthlyPayment,
+    sac,
+    termMonths,
+  };
 }
 
 // ─── Credit score & age → rate adjustment ────────────────────────────────────
@@ -340,13 +360,14 @@ function generateFixedPaybackSchedule(principal, totalCost, termMonths) {
 }
 
 function generateScheduleByProduct(id, calc, params, principal) {
+  const scheduleMonthly = calc.scheduleMonthlyPayment ?? calc.monthlyPayment;
   switch (id) {
     case 'creditCard':
     case 'equipmentFinancing':
-      return generateAmortizedSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0, 0);
+      return generateAmortizedSchedule(principal, scheduleMonthly, calc.termMonths, params.apr || 0, 0);
     case 'sba':
     case 'termLoan':
-      return generateAmortizedSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0, calc.feeAmount || 0);
+      return generateAmortizedSchedule(principal, scheduleMonthly, calc.termMonths, params.apr || 0, calc.feeAmount || 0);
     case 'lineOfCredit':
       return generateBalloonSchedule(principal, calc.termMonths, calc.totalInterest);
     case 'mca':

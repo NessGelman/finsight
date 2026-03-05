@@ -7,7 +7,7 @@ export const TOOLTIPS = {
   totalCost:
     'Total amount paid over the full term, including principal, interest, and all fees.',
   avgMonthly:
-    'Average monthly payment. For MCAs this is estimated daily holdback converted to a monthly figure.',
+    'Average monthly outflow over the modeled term (total payback divided by term).',
   creditScore:
     'Your business or personal credit score. Higher scores unlock lower interest rates. Range: 300–850.',
   businessAge:

@@ -19,7 +19,7 @@ export function AmortizationModal({ product, onClose }) {
                 <div className="modal-body">
                     <div className="schedule-summary-grid">
                         <div className="summary-item">
-                            <span className="summary-label">Monthly Payment</span>
+                            <span className="summary-label">Avg Monthly Outflow</span>
                             <span className="summary-value">{formatCurrency(product.monthlyPayment)}</span>
                         </div>
                         <div className="summary-item">
