@@ -7,9 +7,9 @@ function PersonalizedNote({ id, result, inputs }) {
   const notes = {
     sba: `For your ${formatCurrency(inputs.principal)} loan, SBA financing costs ${formatCurrency(result.totalCost)} total over ${formatMonths(result.termMonths)} — the lowest rate option if you qualify.`,
     lineOfCredit: `Your ${formatCurrency(inputs.principal)} line would cost ${formatCurrency(result.totalCost)} in interest/fees over ${formatMonths(result.termMonths)}, at ${formatCurrency(result.monthlyPayment)}/mo.`,
-    creditCard: `Carrying ${formatCurrency(inputs.principal)} on a business card costs ${formatCurrency(result.totalCost)} total at ${formatPercent(result.sac)} effective annual rate.`,
+    creditCard: `Carrying ${formatCurrency(inputs.principal)} on a business card costs ${formatCurrency(result.totalCost)} total at ${formatPercent(result.eac ?? result.sac)} effective annual rate.`,
     mca: `A ${formatCurrency(inputs.principal)} advance repays ${formatCurrency(result.totalCost)} — a ${formatPercent(((result.totalCost / inputs.principal) - 1) * 100)} premium above principal.`,
-    invoiceFactoring: `To receive ${formatCurrency(inputs.principal)} upfront via factoring, invoice face value is grossed up for the 85% advance. True cost is ${formatCurrency(result.totalInterest)} (fees + 15% haircut) — ${formatPercent(result.sac)} effective annual rate.`,
+    invoiceFactoring: `To receive ${formatCurrency(inputs.principal)} upfront via factoring, invoice face value is grossed up for the 85% advance. True cost is ${formatCurrency(result.totalInterest)} (fees + 15% haircut) — ${formatPercent(result.eac ?? result.sac)} effective annual rate.`,
     revenueBased: `For your ${formatCurrency(inputs.principal)} advance, you repay ${formatCurrency(result.totalCost)} total (1.30× cap). Estimated ${formatMonths(result.termMonths)} repayment uses a revenue-share model normalized to the term.`,
     equipmentFinancing: `${formatCurrency(inputs.principal)} financed for equipment costs ${formatCurrency(result.totalCost)} total over ${formatMonths(result.termMonths)} at ${formatCurrency(result.monthlyPayment)}/mo.`,
     termLoan: `A ${formatCurrency(inputs.principal)} term loan costs ${formatCurrency(result.totalCost)} total (including 3% origination fee) over ${formatMonths(result.termMonths)}.`,

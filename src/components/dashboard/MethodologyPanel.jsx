@@ -33,6 +33,12 @@ export function MethodologyPanel() {
               <p className="methodology-text">
                 Unlike APR, SAC includes all fees (origination, guarantee, maintenance) and normalizes for term length.
               </p>
+              <div className="methodology-formula" style={{ marginTop: 8 }}>
+                EAC = ((Total Cost ÷ Principal)^(12 ÷ Term Months) − 1) × 100
+              </div>
+              <p className="methodology-text">
+                EAC compounds cost to an annual equivalent rate; SAC is linear annualization. We show both where relevant.
+              </p>
             </div>
 
             <div className="methodology-section">

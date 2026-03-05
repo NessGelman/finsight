@@ -22,14 +22,25 @@ export function reverseAmortize(monthlyPayment, apr, termMonths) {
 
 // ─── Per-product calculation functions ───────────────────────────────────────
 
+function annualizedCostMetrics(principal, totalCost, termMonths) {
+  if (principal <= 0 || termMonths <= 0 || totalCost <= 0) {
+    return { sac: 0, eac: 0 };
+  }
+  const totalBorrowingCost = Math.max(0, totalCost - principal);
+  const sac = (totalBorrowingCost / principal) * (12 / termMonths) * 100;
+  const growthMultiple = totalCost / principal;
+  const eac = (Math.pow(growthMultiple, 12 / termMonths) - 1) * 100;
+  return { sac, eac };
+}
+
 function calcCreditCard(principal, apr, termMonths) {
   const monthlyPayment = amortize(principal, apr, termMonths);
   const totalCost = monthlyPayment * termMonths;
   const interestAmount = totalCost - principal;
   const feeAmount = 0;
   const totalInterest = interestAmount + feeAmount;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths };
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
+  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths };
 }
 
 function calcSBA(principal, apr, termMonths) {
@@ -46,7 +57,7 @@ function calcSBA(principal, apr, termMonths) {
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
   const monthlyPayment = totalCost / termMonths;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
     totalInterest,
@@ -55,6 +66,7 @@ function calcSBA(principal, apr, termMonths) {
     monthlyPayment,
     scheduleMonthlyPayment: contractualMonthlyPayment,
     sac,
+    eac,
     termMonths,
   };
 }
@@ -68,7 +80,7 @@ function calcLineOfCredit(principal, apr, termMonths) {
   const interestAmount = monthlyInterest * termMonths;
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
     totalInterest,
@@ -76,6 +88,7 @@ function calcLineOfCredit(principal, apr, termMonths) {
     feeAmount,
     monthlyPayment: totalCost / termMonths,
     sac,
+    eac,
     termMonths,
   };
 }
@@ -86,8 +99,8 @@ function calcMCA(principal, factorRate, termMonths) {
   const feeAmount = payback - principal;
   const totalInterest = feeAmount;
   const monthlyPayment = payback / termMonths;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
-  return { totalCost: payback, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths };
+  const { sac, eac } = annualizedCostMetrics(principal, payback, termMonths);
+  return { totalCost: payback, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths };
 }
 
 function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
@@ -101,7 +114,7 @@ function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
   const totalInterest = feeAmount;
   const totalCost = principal + totalInterest; // comparable to other products' total payback
   const monthlyPayment = totalCost / termMonths;
-  const sac = (feeAmount / principal) * (12 / termMonths) * 100;
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
     totalInterest,
@@ -109,6 +122,7 @@ function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
     feeAmount,
     monthlyPayment,
     sac,
+    eac,
     termMonths,
   };
 }
@@ -129,8 +143,8 @@ function calcRBF(principal, capRate, annualRevenue) {
   const monthlyPayment = totalCost / estimatedTerm;
   const interestAmount = 0;
   const totalInterest = feeAmount;
-  const sac = (feeAmount / principal) * (12 / estimatedTerm) * 100;
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths: estimatedTerm };
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, estimatedTerm);
+  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths: estimatedTerm };
 }
 
 function calcEquipmentFinancing(principal, apr, termMonths) {
@@ -139,8 +153,8 @@ function calcEquipmentFinancing(principal, apr, termMonths) {
   const interestAmount = totalCost - principal;
   const feeAmount = 0;
   const totalInterest = interestAmount + feeAmount;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, termMonths };
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
+  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths };
 }
 
 function calcTermLoan(principal, apr, termMonths) {
@@ -152,7 +166,7 @@ function calcTermLoan(principal, apr, termMonths) {
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
   const monthlyPayment = totalCost / termMonths;
-  const sac = (totalInterest / principal) * (12 / termMonths) * 100;
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
     totalInterest,
@@ -161,6 +175,7 @@ function calcTermLoan(principal, apr, termMonths) {
     monthlyPayment,
     scheduleMonthlyPayment: contractualMonthlyPayment,
     sac,
+    eac,
     termMonths,
   };
 }
@@ -438,7 +453,7 @@ export function calculateAllOptions(
         calc = calcRBF(principal, params.capRate, annualRevenue);
         break;
       default:
-        calc = { totalCost: 0, totalInterest: 0, interestAmount: 0, feeAmount: 0, monthlyPayment: 0, sac: 0, termMonths: 12 };
+        calc = { totalCost: 0, totalInterest: 0, interestAmount: 0, feeAmount: 0, monthlyPayment: 0, sac: 0, eac: 0, termMonths: 12 };
     }
 
     const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry });

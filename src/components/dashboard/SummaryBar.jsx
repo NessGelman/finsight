@@ -54,7 +54,7 @@ export function SummaryBar({ results, selectedProduct, strategy }) {
         <div className="best-eyebrow">{isSelected ? 'Selected Option' : 'Recommended Option'}</div>
         <div className="best-name">{display.label}</div>
         <div className="best-metrics">
-          Cost: <strong>{formatCurrency(display.totalCost)}</strong> · EAC: <strong>{formatPercent(display.sac)}</strong>
+          Cost: <strong>{formatCurrency(display.totalCost)}</strong> · EAC: <strong>{formatPercent(display.eac ?? display.sac)}</strong>
           {display.freeCashflowPct != null && (
             <> · <strong>{formatPercent(display.freeCashflowPct)}</strong> buffer utilization</>
           )}
