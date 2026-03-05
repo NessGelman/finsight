@@ -81,16 +81,16 @@ function calcMCA(principal, factorRate, termMonths) {
 }
 
 function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
-  // Advance rate 85%; fee is % of invoice face value per month.
-  // True cost includes both the monthly fees AND the 15% haircut (discount the
-  // factor permanently keeps), making it comparable to other borrowing products.
-  const monthlyFees = principal * (monthlyFeeRate / 100) * termMonths;
-  const haircut = principal * 0.15; // 15% discount — never returned to borrower
+  // `principal` is cash needed now. With an 85% advance rate, the invoice face
+  // value is larger than the advance. Fees and haircut are applied to that face.
+  const invoiceFace = principal / 0.85;
+  const monthlyFees = invoiceFace * (monthlyFeeRate / 100) * termMonths;
+  const haircut = invoiceFace * 0.15; // 15% discount — never returned to borrower
   const feeAmount = monthlyFees + haircut;
   const interestAmount = 0;
   const totalInterest = feeAmount;
   const totalCost = principal + totalInterest; // comparable to other products' total payback
-  const monthlyPayment = feeAmount / termMonths;
+  const monthlyPayment = totalCost / termMonths;
   const sac = (feeAmount / principal) * (12 / termMonths) * 100;
   return {
     totalCost,
@@ -105,15 +105,18 @@ function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
 
 function calcRBF(principal, capRate, annualRevenue) {
   // Repayment cap model: borrow $X, pay back $X × capRate total.
-  // Monthly payment ≈ 10% of monthly revenue (industry standard revenue share).
-  // Term = how many months until fully repaid at that payment rate (capped at 48 mo).
+  // Start with 10% of monthly revenue as target share, then cap modeled term to 48 months.
+  // If the cap binds, payment is normalized so payment × term = total cost.
   const totalCost = principal * capRate;
   const feeAmount = totalCost - principal;
   const monthlyRevenue = annualRevenue / 12;
-  const monthlyPayment = monthlyRevenue * 0.10;
-  const estimatedTerm = monthlyPayment > 0
-    ? Math.min(Math.ceil(totalCost / monthlyPayment), 48)
+  const targetRevenueSharePayment = monthlyRevenue * 0.10;
+  const unconstrainedTerm = targetRevenueSharePayment > 0
+    ? Math.ceil(totalCost / targetRevenueSharePayment)
     : 48;
+  const estimatedTerm = Math.min(Math.max(1, unconstrainedTerm), 48);
+  // Keep payment/term/total mathematically coherent when term is capped.
+  const monthlyPayment = totalCost / estimatedTerm;
   const interestAmount = 0;
   const totalInterest = feeAmount;
   const sac = (feeAmount / principal) * (12 / estimatedTerm) * 100;
@@ -267,27 +270,92 @@ function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principa
 }
 
 // ─── Schedule generator ─────────────────────────────────────────────────────
-function generateSchedule(principal, monthlyPayment, termMonths, apr) {
+function generateAmortizedSchedule(principal, monthlyPayment, termMonths, apr, upfrontFee = 0) {
   const schedule = [];
   let remaining = principal;
   const monthlyRate = apr / 100 / 12;
 
-  for (let m = 1; m <= Math.min(termMonths, 120); m++) {
+  for (let m = 1; m <= termMonths; m++) {
     const interest = remaining * monthlyRate;
-    const principalPaid = monthlyPayment - interest;
+    let principalPaid = monthlyPayment - interest;
+    if (principalPaid > remaining) principalPaid = remaining;
     remaining = Math.max(0, remaining - principalPaid);
+    const feePortion = m === 1 ? upfrontFee : 0;
 
     schedule.push({
       month: m,
-      payment: monthlyPayment,
-      interest,
+      payment: monthlyPayment + feePortion,
+      interest: interest + feePortion,
       principal: principalPaid,
       remaining
     });
 
-    if (remaining <= 0) break;
+    if (remaining <= 0 && m >= termMonths) break;
   }
   return schedule;
+}
+
+function generateBalloonSchedule(principal, termMonths, totalInterestAndFees) {
+  const schedule = [];
+  const baseInterest = termMonths > 0 ? totalInterestAndFees / termMonths : 0;
+  let remaining = principal;
+
+  for (let m = 1; m <= termMonths; m++) {
+    const isLast = m === termMonths;
+    const principalPaid = isLast ? remaining : 0;
+    const payment = baseInterest + principalPaid;
+    remaining = Math.max(0, remaining - principalPaid);
+    schedule.push({
+      month: m,
+      payment,
+      interest: baseInterest,
+      principal: principalPaid,
+      remaining,
+    });
+  }
+  return schedule;
+}
+
+function generateFixedPaybackSchedule(principal, totalCost, termMonths) {
+  const schedule = [];
+  let remaining = principal;
+  const payment = termMonths > 0 ? totalCost / termMonths : 0;
+  const principalRatio = totalCost > 0 ? principal / totalCost : 0;
+
+  for (let m = 1; m <= termMonths; m++) {
+    const isLast = m === termMonths;
+    let principalPaid = isLast ? remaining : payment * principalRatio;
+    if (principalPaid > remaining) principalPaid = remaining;
+    const feePortion = payment - principalPaid;
+    remaining = Math.max(0, remaining - principalPaid);
+    schedule.push({
+      month: m,
+      payment,
+      interest: feePortion,
+      principal: principalPaid,
+      remaining,
+    });
+  }
+  return schedule;
+}
+
+function generateScheduleByProduct(id, calc, params, principal) {
+  switch (id) {
+    case 'creditCard':
+    case 'equipmentFinancing':
+      return generateAmortizedSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0, 0);
+    case 'sba':
+    case 'termLoan':
+      return generateAmortizedSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0, calc.feeAmount || 0);
+    case 'lineOfCredit':
+      return generateBalloonSchedule(principal, calc.termMonths, calc.totalInterest);
+    case 'mca':
+    case 'invoiceFactoring':
+    case 'revenueBased':
+      return generateFixedPaybackSchedule(principal, calc.totalCost, calc.termMonths);
+    default:
+      return [];
+  }
 }
 
 // ─── Master orchestrator ─────────────────────────────────────────────────────
@@ -354,8 +422,7 @@ export function calculateAllOptions(
 
     const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry });
 
-    // Generate sample schedule (first 12 months for brevity in previews, or full)
-    const schedule = generateSchedule(principal, calc.monthlyPayment, calc.termMonths, params.apr || 0);
+    const schedule = generateScheduleByProduct(id, calc, params, principal);
 
     return {
       id,

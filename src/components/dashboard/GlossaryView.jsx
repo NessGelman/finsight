@@ -9,8 +9,8 @@ function PersonalizedNote({ id, result, inputs }) {
     lineOfCredit: `Your ${formatCurrency(inputs.principal)} line would cost ${formatCurrency(result.totalCost)} in interest/fees over ${formatMonths(result.termMonths)}, at ${formatCurrency(result.monthlyPayment)}/mo.`,
     creditCard: `Carrying ${formatCurrency(inputs.principal)} on a business card costs ${formatCurrency(result.totalCost)} total at ${formatPercent(result.sac)} effective annual rate.`,
     mca: `A ${formatCurrency(inputs.principal)} advance repays ${formatCurrency(result.totalCost)} — a ${formatPercent(((result.totalCost / inputs.principal) - 1) * 100)} premium above principal.`,
-    invoiceFactoring: `Factoring ${formatCurrency(inputs.principal)} in invoices yields ${formatCurrency(inputs.principal * 0.85)} upfront. True cost is ${formatCurrency(result.totalInterest)} (fees + 15% haircut) — ${formatPercent(result.sac)} effective annual rate.`,
-    revenueBased: `For your ${formatCurrency(inputs.principal)} advance, you repay ${formatCurrency(result.totalCost)} total (1.30× cap). Estimated ${formatMonths(result.termMonths)} repayment at 10% of monthly revenue.`,
+    invoiceFactoring: `To receive ${formatCurrency(inputs.principal)} upfront via factoring, invoice face value is grossed up for the 85% advance. True cost is ${formatCurrency(result.totalInterest)} (fees + 15% haircut) — ${formatPercent(result.sac)} effective annual rate.`,
+    revenueBased: `For your ${formatCurrency(inputs.principal)} advance, you repay ${formatCurrency(result.totalCost)} total (1.30× cap). Estimated ${formatMonths(result.termMonths)} repayment uses a revenue-share model normalized to the term.`,
     equipmentFinancing: `${formatCurrency(inputs.principal)} financed for equipment costs ${formatCurrency(result.totalCost)} total over ${formatMonths(result.termMonths)} at ${formatCurrency(result.monthlyPayment)}/mo.`,
     termLoan: `A ${formatCurrency(inputs.principal)} term loan costs ${formatCurrency(result.totalCost)} total (including 3% origination fee) over ${formatMonths(result.termMonths)}.`,
   };
