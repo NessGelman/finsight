@@ -46,20 +46,20 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
     return 'totalCost';
   }, [strategy]);
 
-  const { sorted, sortKey, sortDir, onSort } = useSort(results, initialKey, 'asc');
+  const { sorted, sortKey, sortDir, onSort, setSort } = useSort(results, initialKey, 'asc');
   const [popoverId, setPopoverId] = useState(null);
   const tableRef = useRef(null);
 
-  // Sync sort when strategy changes, but AVOID loops
+  // Strategy presets should enforce ascending sort for their primary metric.
   useEffect(() => {
-    if (strategy === 'cost' && sortKey !== 'totalCost') {
-      onSort('totalCost');
-    } else if (strategy === 'cashflow' && sortKey !== 'monthlyPayment') {
-      onSort('monthlyPayment');
-    } else if (strategy === 'speed' && sortKey !== 'speedOrder') {
-      onSort('speedOrder');
+    if (strategy === 'cost' && (sortKey !== 'totalCost' || sortDir !== 'asc')) {
+      setSort('totalCost', 'asc');
+    } else if (strategy === 'cashflow' && (sortKey !== 'monthlyPayment' || sortDir !== 'asc')) {
+      setSort('monthlyPayment', 'asc');
+    } else if (strategy === 'speed' && (sortKey !== 'speedOrder' || sortDir !== 'asc')) {
+      setSort('speedOrder', 'asc');
     }
-  }, [strategy, sortKey, onSort]);
+  }, [strategy, sortKey, sortDir, setSort]);
 
   useEffect(() => {
     function handlePointerDown(event) {

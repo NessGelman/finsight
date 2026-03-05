@@ -32,7 +32,9 @@ function mergeTypes(raw) {
 
 function generateScenarios(baseInputs, baseResults, liveRates) {
   const scenarios = [];
-  const baseBest = baseResults.find((r) => r.isCheapest) ?? baseResults[0];
+  const eligible = baseResults.filter((r) => !isHardBlocked(r));
+  const basePool = eligible.length ? eligible : baseResults;
+  const baseBest = [...basePool].sort((a, b) => a.totalCost - b.totalCost)[0];
   if (!baseBest) return scenarios;
 
   // 1. Credit score boost (if not already excellent)
@@ -340,11 +342,17 @@ export function ScenarioAnalysis({ baseInputs, baseResults, liveRates }) {
     [baseResults],
   );
 
+  const rateSnapshot = useMemo(() => {
+    if (!liveRates?.prime && !liveRates?.creditCard) return null;
+    return {
+      prime: liveRates?.prime ?? null,
+      creditCard: liveRates?.creditCard ?? null,
+    };
+  }, [liveRates?.prime, liveRates?.creditCard]);
+
   const scenarios = useMemo(
-    () => generateScenarios(baseInputs, baseResults, liveRates),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [baseInputs.principal, baseInputs.annualRevenue, baseInputs.businessAge, baseInputs.creditScore, baseInputs.collateral,
-     liveRates?.prime?.value, liveRates?.creditCard?.value],
+    () => generateScenarios(baseInputs, baseResults, rateSnapshot),
+    [baseInputs, baseResults, rateSnapshot],
   );
 
   return (

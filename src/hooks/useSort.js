@@ -15,6 +15,11 @@ export function useSort(data, defaultKey = 'totalCost', defaultDir = 'asc') {
     });
   }, []);
 
+  const setSort = useCallback((key, dir = 'asc') => {
+    setSortKey(key);
+    setSortDir(dir);
+  }, []);
+
   const sorted = useMemo(() => {
     if (!data || data.length === 0) return [];
     return [...data].sort((a, b) => {
@@ -31,5 +36,5 @@ export function useSort(data, defaultKey = 'totalCost', defaultDir = 'asc') {
     });
   }, [data, sortKey, sortDir]);
 
-  return { sorted, sortKey, sortDir, onSort };
+  return { sorted, sortKey, sortDir, onSort, setSort };
 }
