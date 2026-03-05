@@ -1,5 +1,6 @@
 export const TOOLTIPS = {
   sac: 'Standardized Annual Cost (SAC) annualizes the total borrowing cost as a % of principal. Unlike APR, SAC accounts for fees, term length, and product structure differences — making it the fairest single metric for comparing all financing types.',
+  eac: 'Effective Annual Cost (EAC) compounds total borrowing cost into an annual equivalent rate: ((Total Cost ÷ Principal)^(12 ÷ Term) − 1). It is usually higher than SAC for short-term products.',
   freeCashflowPct:
     'Monthly payment as a % of estimated monthly free cashflow (15% of annual revenue). Above 30% may cause cashflow stress; above 50% is generally considered high risk.',
   vsCheapest:

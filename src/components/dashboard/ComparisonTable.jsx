@@ -11,6 +11,7 @@ const COLUMNS = [
   { key: 'likelihood', label: 'Likelihood', sortable: true },
   { key: 'totalCost', label: 'Total Cost', sortable: true, tooltip: TOOLTIPS.totalCost },
   { key: 'sac', label: 'SAC', sortable: true, tooltip: TOOLTIPS.sac },
+  { key: 'eac', label: 'EAC', sortable: true, tooltip: TOOLTIPS.eac },
   { key: 'monthlyPayment', label: 'Monthly', sortable: true, tooltip: TOOLTIPS.avgMonthly },
   { key: 'freeCashflowPct', label: 'FCF %', sortable: true, tooltip: TOOLTIPS.freeCashflowPct },
   { key: 'termMonths', label: 'Term', sortable: true },
@@ -144,6 +145,7 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                   </div>
                 </td>
                 <td><span className={sacCellClass(row.sac)}>{formatPercent(row.sac)}</span></td>
+                <td><span className={sacCellClass(row.eac ?? row.sac)}>{formatPercent(row.eac ?? row.sac)}</span></td>
                 <td>{formatCurrency(row.monthlyPayment)}</td>
                 <td>{formatPercent(row.freeCashflowPct)}</td>
                 <td style={{ color: 'var(--text-secondary)' }}>{formatMonths(row.termMonths)}</td>
