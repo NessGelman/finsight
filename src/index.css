@@ -3040,31 +3040,3 @@ section {
     border-bottom: 2px solid #333 !important;
   }
 }
-
-/* Re-applied simplified bubble styling from 9b724bf */
-.best-badge {
-    background-color: #f5f5f5;
-    border-radius: 4px;
-    padding: 5px 10px;
-    font-size: 14px;
-}
-
-.best-savings {
-    color: #28a745;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.likelihood-pill {
-    border-radius: 20px;
-    padding: 5px 10px;
-    color: #fff;
-}
-
-.warning-chip {
-    background-color: #ffc107;
-    color: #212529;
-    border-radius: 12px;
-    padding: 5px 10px;
-    font-size: 12px;
-}
