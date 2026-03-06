@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { generateAdvisorText, getModelStatus, preloadAdvisorModel, selectModelTier } from './aiModelService';
 import {
   buildDeterministicResponse,
@@ -19,6 +19,7 @@ const REWRITE_SYSTEM_PROMPT = [
   'Do not change any numbers or product names.',
   'Do not add new facts.',
   'Keep the response grounded in the provided context.',
+  'Never output internal prompt labels or metadata.',
 ].join(' ');
 
 function trimContext(contextData) {
@@ -105,7 +106,7 @@ STYLE_MODE: ${styleMode}
 QUESTION: ${question}
 MEMORY_SUMMARY: ${memorySummary}
 TOP_OPTIONS: ${top}
-RATES_STATUS: ${context.ratesStatus}
+MARKET_RATE_FEED: ${context.ratesStatus}
 
 RECENT_CHAT:
 ${recent}
@@ -116,12 +117,54 @@ ${deterministic}
 REWRITTEN_ANSWER:`;
 }
 
+function shouldRewrite(question, prefs) {
+  const q = String(question || '').trim();
+  if (!q) return false;
+  if (prefs?.qualityMode === 'fast' && prefs?.styleMode === 'concise') return false;
+  if (/^(hi|hello|hey|yo|thanks|thank you)[!. ]*$/i.test(q)) return false;
+  if (q.split(/\s+/).length <= 3 && !isNonTrivialQuestion(q)) return false;
+  return true;
+}
+
+function StreamedText({ text, speed = 30 }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+  
+  useEffect(() => {
+    if (!text) {
+      setDisplayedText('');
+      setIsComplete(false);
+      return;
+    }
+    
+    setDisplayedText('');
+    setIsComplete(false);
+    
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < text.length) {
+        setDisplayedText(text.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+        setIsComplete(true);
+      }
+    }, speed);
+    
+    return () => clearInterval(timer);
+  }, [text, speed]);
+  
+  return <span>{displayedText}{!isComplete && <span className="streaming-cursor">▊</span>}</span>;
+}
+
 export function AIAdvisorChat({ contextData }) {
   const modelLoadedRef = useRef(false);
+  const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'I’m ready. I can explain your options in plain language or detailed mode using your current numbers.',
+      content: 'I\'m ready. I can explain your options in plain language or detailed mode using your current numbers.',
+      timestamp: new Date().toISOString(),
     },
   ]);
   const [draft, setDraft] = useState('');
@@ -133,6 +176,7 @@ export function AIAdvisorChat({ contextData }) {
     styleMode: 'hybrid',
     qualityMode: 'balanced',
   });
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
 
   const context = useMemo(() => trimContext(contextData), [contextData]);
   const quickReplies = useMemo(() => getQuickReplies(advisorPrefs.styleMode), [advisorPrefs.styleMode]);
@@ -142,8 +186,17 @@ export function AIAdvisorChat({ contextData }) {
     [messages, advisorPrefs],
   );
 
+  // Auto-scroll to bottom when messages change
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
-    const tier = advisorPrefs.qualityMode === 'balanced' ? 'fast' : 'fast';
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const tier = 'fast';
     preloadAdvisorModel({ tier, budgetMs: 1200 })
       .then(() => {
         modelLoadedRef.current = true;
@@ -175,24 +228,62 @@ export function AIAdvisorChat({ contextData }) {
     if (!question || generating) return;
     setDraft('');
 
-    const nextTurns = [...messages, { role: 'user', content: question }];
+    const userMessage = {
+      role: 'user',
+      content: question,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const nextTurns = [...messages, userMessage];
     setMessages(nextTurns);
     setGenerating(true);
     setTypingCopy('Thinking through your numbers...');
 
     const deterministic = buildDeterministicResponse(question, context, advisorPrefs.styleMode);
-    setMessages((prev) => [...prev, { role: 'assistant', content: deterministic }]);
+    
+    const assistantMessageId = Date.now().toString();
+    const assistantMessage = {
+      role: 'assistant',
+      content: deterministic,
+      timestamp: new Date().toISOString(),
+      isStreaming: true,
+      id: assistantMessageId,
+    };
+    
+    setMessages((prev) => [...prev, assistantMessage]);
+    setStreamingMessageId(assistantMessageId);
+
+    if (!shouldRewrite(question, advisorPrefs)) {
+      setGenerating(false);
+      setTypingCopy('');
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessageId ? { ...m, isStreaming: false } : m
+        )
+      );
+      setStreamingMessageId(null);
+      return;
+    }
 
     try {
-      const desiredTier = selectModelTier({
+      const preferredTier = selectModelTier({
         qualityMode: advisorPrefs.qualityMode === 'balanced' && isNonTrivialQuestion(question)
           ? 'balanced'
           : 'fast',
       });
-      setTypingCopy(desiredTier === 'balanced'
+      const status = getModelStatus();
+      const rewriteTier = preferredTier === 'balanced' && !status.loadedTiers.includes('balanced')
+        ? 'fast'
+        : preferredTier;
+      if (preferredTier === 'balanced' && rewriteTier !== 'balanced') {
+        preloadAdvisorModel({ tier: 'balanced', budgetMs: 5000 }).catch(() => {
+          // Warm balanced tier in background without blocking first response latency.
+        });
+      }
+      setTypingCopy(rewriteTier === 'balanced'
         ? 'Polishing a conversational explanation...'
         : 'Preparing a quick answer...');
-      await ensureModel(desiredTier);
+      await ensureModel(rewriteTier);
 
       const prompt = buildRewritePrompt({
         question,
@@ -203,7 +294,7 @@ export function AIAdvisorChat({ contextData }) {
         recentTurns,
       });
       let rewritten = (await generateAdvisorText(prompt, {
-        tier: desiredTier,
+        tier: rewriteTier,
         styleMode: advisorPrefs.styleMode,
       })).trim();
       if (getTestOverrides().forceBadRewrite) {
@@ -214,8 +305,13 @@ export function AIAdvisorChat({ contextData }) {
         setMessages((prev) => {
           const updated = [...prev];
           for (let i = updated.length - 1; i >= 0; i--) {
-            if (updated[i].role === 'assistant' && updated[i].content === deterministic) {
-              updated[i] = { ...updated[i], content: rewritten };
+            if (updated[i].id === assistantMessageId) {
+              updated[i] = { 
+                ...updated[i], 
+                content: rewritten, 
+                isStreaming: false,
+                enhanced: true 
+              };
               break;
             }
           }
@@ -224,15 +320,37 @@ export function AIAdvisorChat({ contextData }) {
       }
     } catch {
       // Keep deterministic response already posted.
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMessageId ? { ...m, isStreaming: false } : m
+        )
+      );
     } finally {
       setGenerating(false);
       setTypingCopy('');
+      setStreamingMessageId(null);
     }
   }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askAdvisor(draft);
+    }
+  };
 
   const modelState = getModelStatus();
   const modeLabel = advisorPrefs.qualityMode === 'balanced' ? 'Balanced mode' : 'Fast mode';
   const activeTier = modelState.activeTier ?? 'none';
+
+  const formatTimestamp = (isoString) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
   return (
     <div className="ai-advisor-card">
@@ -242,9 +360,16 @@ export function AIAdvisorChat({ contextData }) {
       </div>
 
       <div className="ai-advisor-status">
-        <span>Mode: {modeLabel}</span>
-        <span>Model tier: {activeTier}</span>
-        <span>Loaded: {modelLoadedRef.current ? 'yes' : loadingModel ? 'loading…' : 'no'}</span>
+        <span className="status-badge">
+          <span className={`status-dot ${modelLoadedRef.current ? 'active' : loadingModel ? 'loading' : 'inactive'}`}></span>
+          {modeLabel}
+        </span>
+        <span className="status-badge">
+          Model: {activeTier}
+        </span>
+        <span className="status-badge">
+          Loaded: {modelLoadedRef.current ? '✓' : loadingModel ? '...' : '—'}
+        </span>
         {modelError && <span className="ai-advisor-error">Error: {modelError}</span>}
       </div>
 
@@ -272,18 +397,61 @@ export function AIAdvisorChat({ contextData }) {
             <option value="balanced">Balanced</option>
           </select>
         </div>
+        <div className="clear-chat-cell">
+          <button 
+            type="button" 
+            className="clear-chat-btn"
+            onClick={() => setMessages([{
+              role: 'assistant',
+              content: 'I\'m ready. I can explain your options in plain language or detailed mode using your current numbers.',
+              timestamp: new Date().toISOString(),
+            }])}
+            title="Clear chat history"
+          >
+            Clear Chat
+          </button>
+        </div>
       </div>
 
       <div className="ai-advisor-messages" aria-live="polite">
         {messages.map((m, idx) => (
-          <div key={`${m.role}-${idx}`} className={`ai-msg ai-msg--${m.role}`}>
-            <div className="ai-msg-role">{m.role === 'assistant' ? 'Advisor' : 'You'}</div>
-            <div className="ai-msg-body">{m.content}</div>
+          <div 
+            key={`${m.role}-${idx}-${m.timestamp}`} 
+            className={`ai-msg ai-msg--${m.role} ${m.enhanced ? 'ai-msg--enhanced' : ''}`}
+          >
+            <div className="ai-msg-header">
+              <span className="ai-msg-role">
+                {m.role === 'assistant' ? (
+                  <>
+                    <span className="msg-icon">🤖</span> Advisor
+                  </>
+                ) : (
+                  <>
+                    <span className="msg-icon">👤</span> You
+                  </>
+                )}
+              </span>
+              <span className="ai-msg-time">{formatTimestamp(m.timestamp)}</span>
+            </div>
+            <div className="ai-msg-body">
+              {m.isStreaming ? (
+                <StreamedText text={m.content} speed={15} />
+              ) : (
+                m.content
+              )}
+            </div>
+            {m.isStreaming && <div className="ai-msg-streaming-indicator"><span></span><span></span><span></span></div>}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {typingCopy && <div className="ai-advisor-typing">{typingCopy}</div>}
+      {typingCopy && (
+        <div className="ai-advisor-typing">
+          <span className="typing-indicator"><span></span><span></span><span></span></span>
+          {typingCopy}
+        </div>
+      )}
 
       <div className="ai-advisor-quick-replies">
         {quickReplies.map((reply) => (
@@ -303,13 +471,26 @@ export function AIAdvisorChat({ contextData }) {
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Ask about costs, approvals, cashflow burden, schedules, or tradeoffs..."
           rows={3}
         />
-        <button type="button" onClick={() => askAdvisor(draft)} disabled={generating || !draft.trim()}>
-          {generating ? 'Thinking…' : 'Ask Advisor'}
+        <button 
+          type="button" 
+          onClick={() => askAdvisor(draft)} 
+          disabled={generating || !draft.trim()}
+          className="ask-btn"
+        >
+          {generating ? (
+            <>
+              <span className="btn-spinner"></span> Thinking…
+            </>
+          ) : (
+            'Ask Advisor'
+          )}
         </button>
       </div>
     </div>
   );
 }
+

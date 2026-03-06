@@ -74,6 +74,8 @@ export function isLowQualityResponse(text) {
   if (!text || text.length < 24) return true;
   const normalized = text.trim();
   if (/finsight\.com for 60 days/i.test(normalized)) return true;
+  if (/\b(rates_status|style_mode|top_options|recent_chat|advisor_draft|rewritten_answer)\b/i.test(normalized)) return true;
+  if (/\b(?:assistant|user)\s*:/i.test(normalized)) return true;
   if ((normalized.match(/\//g) ?? []).length > 12) return true;
   if (/(i\.e\.,\s*){2,}/i.test(normalized)) return true;
   const words = normalized.toLowerCase().split(/\s+/).filter(Boolean);
@@ -99,9 +101,9 @@ function buildStyleTemplate(styleMode, direct, why, followUp) {
     return `${direct}\n\nKey metrics: ${why}\n\nNext: ${followUp}`;
   }
   if (mode === 'detailed') {
-    return `Direct answer: ${direct}\n\nWhy this fits your numbers:\n${why}\n\nSuggested next question: ${followUp}`;
+    return `Short answer: ${direct}\n\nWhy this fits your numbers:\n${why}\n\nSuggested next question: ${followUp}`;
   }
-  return `${direct}\n\nMetrics:\n- ${why}\n\nWant to continue? ${followUp}`;
+  return `Here is the short take: ${direct}\n\nMetrics:\n- ${why}\n\nWant to continue? ${followUp}`;
 }
 
 export function buildDeterministicResponse(question, context, styleMode = 'hybrid') {
@@ -147,7 +149,7 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
     const b = mentioned[1] ?? next ?? lowestMonthly;
     return buildStyleTemplate(
       styleMode,
-      `${a.label} is stronger on ${a.totalCost <= b.totalCost ? 'total cost' : 'other factors'}, while ${b.label} is stronger on ${b.monthlyPayment <= a.monthlyPayment ? 'monthly burden' : 'speed/approval profile'}.`,
+      `${a.label} is better on ${a.totalCost <= b.totalCost ? 'total cost' : 'overall economics'}, while ${b.label} is better on ${b.monthlyPayment <= a.monthlyPayment ? 'monthly burden' : 'speed/approval profile'}.`,
       `${a.label}: ${fmtMoney(a.totalCost)} total, ${fmtMoney(a.monthlyPayment)}/mo, SAC ${fmtPct(a.sac)}, likelihood ${Math.round(a.likelihood)}%. ${b.label}: ${fmtMoney(b.totalCost)} total, ${fmtMoney(b.monthlyPayment)}/mo, SAC ${fmtPct(b.sac)}, likelihood ${Math.round(b.likelihood)}%.`,
       'Should we optimize for approval odds or total cost between those two?',
     );
@@ -201,3 +203,4 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
     `For ${selectedLabel}, want the biggest risks and how to mitigate them?`,
   );
 }
+
