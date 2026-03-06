@@ -41,4 +41,38 @@ test.describe('FinSight E2E', () => {
     await input.fill('What is my cheapest option and why?');
     await expect(page.getByRole('button', { name: 'Ask Advisor' })).toBeEnabled();
   });
+
+  test('ai advisor gives hybrid greeting + follow-up prompt', async ({ page }) => {
+    await page.getByRole('button', { name: 'AI Advisor' }).click();
+    await page.locator('.ai-advisor-input textarea').fill('hi');
+    await page.getByRole('button', { name: 'Ask Advisor' }).click();
+    const lastAdvisor = page.locator('.ai-msg--assistant .ai-msg-body').last();
+    await expect(lastAdvisor).toContainText(/lowest total cost|help you pick/i);
+    await expect(lastAdvisor).toContainText(/want to continue\?|next:/i);
+  });
+
+  test('quality fallback path shows deterministic answer when rewrite is bad', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__FINSIGHT_AI_TEST__ = { forceBadRewrite: true };
+    });
+    await page.goto('/finsight/', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'AI Advisor' }).click();
+    await page.locator('.ai-advisor-input textarea').fill('compare top options');
+    await page.getByRole('button', { name: 'Ask Advisor' }).click();
+    const lastAdvisor = page.locator('.ai-msg--assistant .ai-msg-body').last();
+    await expect(lastAdvisor).toContainText(/metrics:|total cost|monthly burden/i);
+    await expect(lastAdvisor).not.toContainText(/i\.e\., i\.e\./i);
+  });
+
+  test('mode switching updates controls and response shape', async ({ page }) => {
+    await page.getByRole('button', { name: 'AI Advisor' }).click();
+    await page.selectOption('#advisor-style', 'concise');
+    await page.selectOption('#advisor-quality', 'fast');
+    await expect(page.locator('#advisor-style')).toHaveValue('concise');
+    await expect(page.locator('#advisor-quality')).toHaveValue('fast');
+    await expect(page.getByText(/Mode: Fast mode/i)).toBeVisible();
+    await page.locator('.ai-advisor-input textarea').fill('explain in beginner terms');
+    await page.getByRole('button', { name: 'Ask Advisor' }).click();
+    await expect(page.locator('.ai-msg--assistant .ai-msg-body').last()).toContainText(/key metrics|next:/i);
+  });
 });

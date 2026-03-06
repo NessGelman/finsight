@@ -192,7 +192,7 @@ export default function App() {
     let timeoutId = null;
     let idleId = null;
     const startPreload = () => {
-      preloadAdvisorModel().catch(() => {
+      preloadAdvisorModel({ tier: 'fast', budgetMs: 1200 }).catch(() => {
         // Silent failure; user can still trigger explicit load in AI tab.
       });
     };
@@ -210,6 +210,13 @@ export default function App() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'aiAdvisor') return;
+    preloadAdvisorModel({ tier: 'balanced', budgetMs: 5000 }).catch(() => {
+      // Fallback to fast model happens in service; ignore noisy errors here.
+    });
+  }, [activeTab]);
 
   return (
     <AppShell sidebar={<InputPanel inputs={inputs} onUpdate={updateInput} onReset={resetInputs} />}>
