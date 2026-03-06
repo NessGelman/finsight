@@ -1,14 +1,19 @@
 import { useMemo, useRef, useState } from 'react';
 
-const MODEL_ID = 'Xenova/LaMini-Flan-T5-77M';
+const MODEL_ID = 'Xenova/flan-t5-base';
 const TRANSFORMERS_CDN_URL = 'https://esm.sh/@xenova/transformers@2.17.2?bundle';
 
 const SYSTEM_PROMPT = [
   'You are FinSight AI Advisor.',
   'Use only the provided FinSight context data to answer.',
-  'Be concise and practical.',
+  'Be conversational, clear, and practical.',
+  'Explain with concrete numbers from context.',
   'If data is missing, say exactly what is missing.',
   'Do not invent rates, costs, or lender terms.',
+  'Use this output format:',
+  '1) Direct answer',
+  '2) Why (with numbers)',
+  '3) Suggested next question',
 ].join(' ');
 
 function trimContext(contextData) {
@@ -81,7 +86,7 @@ function trimContext(contextData) {
 
 function buildPrompt(context, question, turns) {
   const history = turns
-    .slice(-6)
+    .slice(-10)
     .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
     .join('\n');
 
@@ -147,7 +152,11 @@ export function AIAdvisorChat({ contextData }) {
       const prompt = buildPrompt(context, question, nextTurns);
       const output = await model(prompt, {
         max_new_tokens: 220,
-        do_sample: false,
+        min_length: 60,
+        do_sample: true,
+        temperature: 0.7,
+        top_p: 0.92,
+        repetition_penalty: 1.08,
       });
       const answer = Array.isArray(output) ? output[0]?.generated_text : String(output ?? '');
       setMessages((prev) => [
