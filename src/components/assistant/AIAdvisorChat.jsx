@@ -1,17 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
 import { generateAdvisorText, preloadAdvisorModel } from './aiModelService';
 
+const ENABLE_MODEL_REWRITE = true;
+const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
 const SYSTEM_PROMPT = [
   'You are FinSight AI Advisor.',
-  'Use only the provided FinSight context data to answer.',
-  'Be conversational, clear, and practical.',
-  'Explain with concrete numbers from context.',
-  'If data is missing, say exactly what is missing.',
-  'Do not invent rates, costs, or lender terms.',
-  'Use this output format:',
-  '1) Direct answer',
-  '2) Why (with numbers)',
-  '3) Suggested next question',
+  'Rewrite the advisor draft in natural, friendly language.',
+  'Do not change any product names or numbers.',
+  'Do not add new facts.',
+  'Keep structure and meaning.',
 ].join(' ');
 
 function trimContext(contextData) {
@@ -83,34 +81,28 @@ function trimContext(contextData) {
 }
 
 function buildPrompt(context, question, turns) {
-  const byCost = [...context.results].sort((a, b) => a.totalCost - b.totalCost).slice(0, 3);
-  const byMonthly = [...context.results].sort((a, b) => a.monthlyPayment - b.monthlyPayment).slice(0, 2);
-  const byLikelihood = [...context.results].sort((a, b) => b.likelihood - a.likelihood).slice(0, 2);
+  const byCost = [...context.results].sort((a, b) => a.totalCost - b.totalCost).slice(0, 2);
   const history = turns
-    .slice(-8)
+    .slice(-4)
     .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
     .join('\n');
-  const contextSummary = [
-    `Inputs: principal=${context.inputs.principal}, annualRevenue=${context.inputs.annualRevenue}, fixedExpenses=${context.inputs.fixedExpenses}, creditScore=${context.inputs.creditScore}, businessAge=${context.inputs.businessAge}`,
-    `Top by total cost: ${byCost.map((r) => `${r.label} (${r.totalCost}, ${r.monthlyPayment}/mo, SAC ${r.sac}%)`).join(' | ')}`,
-    `Top by monthly payment: ${byMonthly.map((r) => `${r.label} (${r.monthlyPayment}/mo)`).join(' | ')}`,
-    `Top by approval likelihood: ${byLikelihood.map((r) => `${r.label} (${r.likelihood}%)`).join(' | ')}`,
-    `Selected product detail: ${context.selectedProductDetail ? JSON.stringify(context.selectedProductDetail) : 'none'}`,
-    `Rates status: ${context.ratesStatus}`,
-  ].join('\n');
+  const contextSummary = `Top options now: ${byCost.map((r) => `${r.label} (${moneyFmt.format(r.totalCost)} total)`).join(', ')}`;
 
   return `${SYSTEM_PROMPT}
 
-CONTEXT_SUMMARY:
+QUESTION:
+${question}
+
+CONTEXT:
 ${contextSummary}
 
 RECENT_CHAT:
 ${history}
 
-USER_QUESTION:
-${question}
+ADVISOR_DRAFT:
+${turns[turns.length - 1]?.content ?? ''}
 
-ANSWER:`;
+REWRITTEN_ANSWER:`;
 }
 
 function isLowQualityResponse(text) {
@@ -124,25 +116,122 @@ function isLowQualityResponse(text) {
   return uniqueRatio < 0.35;
 }
 
-function fallbackResponse(question, context) {
+function fmtMoney(val) {
+  return Number.isFinite(val) ? moneyFmt.format(val) : '—';
+}
+
+function fmtPct(val) {
+  return Number.isFinite(val) ? `${val.toFixed(1)}%` : '—';
+}
+
+function fmtMonths(val) {
+  if (!Number.isFinite(val)) return '—';
+  if (val < 12) return `${val} months`;
+  const years = val / 12;
+  return Number.isInteger(years) ? `${years} years` : `${years.toFixed(1)} years`;
+}
+
+function findMentionedProducts(question, results) {
+  const q = question.toLowerCase();
+  return results.filter((r) => q.includes(r.label.toLowerCase()) || q.includes(r.id.toLowerCase()));
+}
+
+function buildDeterministicResponse(question, context) {
+  const q = question.toLowerCase();
   const byCost = [...context.results].sort((a, b) => a.totalCost - b.totalCost);
   const cheapest = byCost[0];
   const next = byCost[1];
   const byMonthly = [...context.results].sort((a, b) => a.monthlyPayment - b.monthlyPayment);
   const lowestMonthly = byMonthly[0];
-  const hint = context.selectedProductDetail?.label ?? cheapest?.label;
+  const byLikelihood = [...context.results].sort((a, b) => b.likelihood - a.likelihood);
+  const bestLikelihood = byLikelihood[0];
+  const mentioned = findMentionedProducts(question, context.results);
+  const selectedLabel = context.selectedProductDetail?.label ?? cheapest?.label ?? 'the current best option';
+  const isGreeting = /\b(hi|hello|hey|yo)\b/i.test(q);
+  const wantsExplain = /\b(explain|detail|beginner|dont know|don't know|what does|how does)\b/i.test(q);
+  const wantsCompare = /\b(compare|vs|versus|difference|tradeoff)\b/i.test(q) || mentioned.length >= 2;
+  const wantsCost = /\b(cheap|cheapest|cost|total)\b/i.test(q);
+  const wantsMonthly = /\b(monthly|payment|cashflow|cash flow|afford)\b/i.test(q);
+  const wantsApproval = /\b(approval|approve|eligib|likelihood|chance|odds)\b/i.test(q);
+  const wantsSchedule = /\b(schedule|amort|term|months?)\b/i.test(q);
 
   if (!cheapest) {
     return '1) Direct answer: I need more data first.\n2) Why (with numbers): No financing results are available yet.\n3) Suggested next question: "Can you compare options once I enter my inputs?"';
   }
 
+  if (isGreeting) {
+    return [
+      `1) Direct answer: I can help you decide between financing options using your current numbers.`,
+      `2) Why (with numbers): Right now your lowest total cost option is ${cheapest.label} at ${fmtMoney(cheapest.totalCost)} (${fmtMoney(cheapest.monthlyPayment)}/mo).` +
+        ` The highest approval likelihood is ${bestLikelihood.label} at ${Math.round(bestLikelihood.likelihood)}%.`,
+      `3) Suggested next question: "Compare ${cheapest.label} vs ${lowestMonthly.label} for me in beginner-friendly terms."`,
+    ].join('\n');
+  }
+
+  if (wantsCompare) {
+    const a = mentioned[0] ?? cheapest;
+    const b = mentioned[1] ?? next ?? lowestMonthly;
+    return [
+      `1) Direct answer: ${a.label} is better for${a.totalCost <= b.totalCost ? ' total cost' : ' other factors'}, while ${b.label} may be better for${b.monthlyPayment <= a.monthlyPayment ? ' monthly burden' : ' speed or approval profile'}.`,
+      `2) Why (with numbers): ${a.label}: ${fmtMoney(a.totalCost)} total, ${fmtMoney(a.monthlyPayment)}/mo, SAC ${fmtPct(a.sac)}, likelihood ${Math.round(a.likelihood)}%.` +
+        ` ${b.label}: ${fmtMoney(b.totalCost)} total, ${fmtMoney(b.monthlyPayment)}/mo, SAC ${fmtPct(b.sac)}, likelihood ${Math.round(b.likelihood)}%.`,
+      `3) Suggested next question: "If I prioritize approval odds, which of those two should I choose?"`,
+    ].join('\n');
+  }
+
+  if (wantsSchedule) {
+    const focus = mentioned[0] ?? context.results.find((r) => r.id === context.selectedProductDetail?.id) ?? cheapest;
+    const s = focus.scheduleSummary;
+    return [
+      `1) Direct answer: ${focus.label} has an estimated term of ${fmtMonths(focus.termMonths)}.`,
+      `2) Why (with numbers): Average monthly outflow is about ${fmtMoney(focus.monthlyPayment)}. Total payback is ${fmtMoney(focus.totalCost)}.` +
+        (s ? ` Early schedule starts near ${fmtMoney(s.firstPayment)} and ends near ${fmtMoney(s.finalPayment)}.` : ''),
+      `3) Suggested next question: "Show me how ${focus.label} compares to ${next ? next.label : lowestMonthly.label} over the first year."`,
+    ].join('\n');
+  }
+
+  if (wantsApproval) {
+    const cleanTop = byLikelihood.filter((r) => (r.eligibilityWarnings ?? []).length === 0)[0] ?? bestLikelihood;
+    return [
+      `1) Direct answer: ${cleanTop.label} currently gives you the strongest approval profile.`,
+      `2) Why (with numbers): ${cleanTop.label} is at about ${Math.round(cleanTop.likelihood)}% likelihood with monthly payment around ${fmtMoney(cleanTop.monthlyPayment)}.` +
+        ` Your top-cost choice (${cheapest.label}) sits around ${Math.round(cheapest.likelihood)}%.`,
+      `3) Suggested next question: "How much extra total cost do I pay if I optimize for approval instead of cheapest cost?"`,
+    ].join('\n');
+  }
+
+  if (wantsMonthly) {
+    return [
+      `1) Direct answer: ${lowestMonthly.label} is your best fit for minimizing monthly strain.`,
+      `2) Why (with numbers): It is about ${fmtMoney(lowestMonthly.monthlyPayment)}/mo, versus ${fmtMoney(cheapest.monthlyPayment)}/mo for ${cheapest.label}.` +
+        ` Its free-cashflow utilization is ${fmtPct(lowestMonthly.freeCashflowPct)}.`,
+      `3) Suggested next question: "How much more total cost do I pay for the lower monthly payment?"`,
+    ].join('\n');
+  }
+
+  if (wantsExplain || wantsCost) {
+    return [
+      `1) Direct answer: ${cheapest.label} is your current best baseline on total cost.`,
+      `2) Why (with numbers): ${cheapest.label} is about ${fmtMoney(cheapest.totalCost)} total (${fmtMoney(cheapest.monthlyPayment)}/mo, SAC ${fmtPct(cheapest.sac)}, EAC ${fmtPct(cheapest.eac)}).` +
+        (next ? ` Next best is ${next.label} at ${fmtMoney(next.totalCost)} total.` : ''),
+      `3) Suggested next question: "Explain the tradeoff between ${cheapest.label} and ${lowestMonthly.label} like I’m new to financing."`,
+    ].join('\n');
+  }
+
   return [
-    `1) Direct answer: Based on your current numbers, ${cheapest.label} is the strongest baseline choice for total cost.`,
-    `2) Why (with numbers): ${cheapest.label} is about ${Math.round(cheapest.totalCost)} total (${Math.round(cheapest.monthlyPayment)}/mo, likelihood ${Math.round(cheapest.likelihood)}%).` +
-      (next ? ` Next best is ${next.label} at about ${Math.round(next.totalCost)} total.` : '') +
-      ` Lowest monthly burden is ${lowestMonthly.label} at about ${Math.round(lowestMonthly.monthlyPayment)}/mo.`,
-    `3) Suggested next question: ${question ? `"For ${hint}, what are the biggest tradeoffs vs the next best option?"` : '"What is my best option if I care more about monthly cashflow than total cost?"'}`,
+    `1) Direct answer: ${cheapest.label} is still your strongest default recommendation.`,
+    `2) Why (with numbers): ${cheapest.label} is ${fmtMoney(cheapest.totalCost)} total and ${fmtMoney(cheapest.monthlyPayment)}/mo. ${lowestMonthly.label} has the lightest monthly burden at ${fmtMoney(lowestMonthly.monthlyPayment)}/mo.`,
+    `3) Suggested next question: "For ${selectedLabel}, what are the main risks and how can I mitigate them?"`,
   ].join('\n');
+}
+
+function isAcceptableRewrite(draft, rewrite, context) {
+  if (isLowQualityResponse(rewrite)) return false;
+  const draftNumbers = (draft.match(/\$?\d[\d,]*(?:\.\d+)?%?/g) ?? []).slice(0, 6);
+  const requiredLabels = context.results.slice(0, 3).map((r) => r.label).filter((label) => draft.includes(label));
+  const hasNumbers = draftNumbers.length === 0 || draftNumbers.some((n) => rewrite.includes(n));
+  const hasLabel = requiredLabels.length === 0 || requiredLabels.some((label) => rewrite.includes(label));
+  return hasNumbers && hasLabel;
 }
 
 export function AIAdvisorChat({ contextData }) {
@@ -187,15 +276,24 @@ export function AIAdvisorChat({ contextData }) {
     setGenerating(true);
 
     try {
-      await ensureModel();
-      const prompt = buildPrompt(context, question, nextTurns);
-      const answer = (await generateAdvisorText(prompt)).trim();
-      const safeAnswer = isLowQualityResponse(answer) ? fallbackResponse(question, context) : answer;
+      const deterministic = buildDeterministicResponse(question, context);
+      let safeAnswer = deterministic;
+
+      if (ENABLE_MODEL_REWRITE) {
+        await ensureModel();
+        const rewriteTurns = [...nextTurns, { role: 'assistant', content: deterministic }];
+        const prompt = buildPrompt(context, question, rewriteTurns);
+        const rewritten = (await generateAdvisorText(prompt)).trim();
+        if (isAcceptableRewrite(deterministic, rewritten, context)) {
+          safeAnswer = rewritten;
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: safeAnswer || fallbackResponse(question, context),
+          content: safeAnswer || deterministic,
         },
       ]);
     } catch {
@@ -203,7 +301,7 @@ export function AIAdvisorChat({ contextData }) {
         ...prev,
         {
           role: 'assistant',
-          content: 'I could not run the in-browser model. Check network/browser support and try again.',
+          content: buildDeterministicResponse(question, context),
         },
       ]);
     } finally {
