@@ -37,6 +37,9 @@ const MethodologyPanel = lazy(() =>
 const LearningAssistant = lazy(() =>
   import('./components/assistant/LearningAssistant').then((m) => ({ default: m.LearningAssistant })),
 );
+const AIAdvisorChat = lazy(() =>
+  import('./components/assistant/AIAdvisorChat').then((m) => ({ default: m.AIAdvisorChat })),
+);
 
 const DEFAULT_INPUTS = {
   principal: 100000,
@@ -161,6 +164,20 @@ export default function App() {
   const sectionFallback = (
     <div className="section-loading">Loading module...</div>
   );
+
+  const aiAdvisorContext = useMemo(() => ({
+    inputs,
+    results,
+    rates,
+    ratesStatus,
+    savedScenario,
+    viewState: {
+      activeTab,
+      activeFilter,
+      strategy,
+      selectedProduct,
+    },
+  }), [inputs, results, rates, ratesStatus, savedScenario, activeTab, activeFilter, strategy, selectedProduct]);
 
   useEffect(() => {
     try {
@@ -291,6 +308,14 @@ export default function App() {
           <section id="assistant" className="section-block">
             <Suspense fallback={sectionFallback}>
               <LearningAssistant results={results} inputs={inputs} />
+            </Suspense>
+          </section>
+        )}
+
+        {activeTab === 'aiAdvisor' && (
+          <section id="ai-advisor" className="section-block">
+            <Suspense fallback={sectionFallback}>
+              <AIAdvisorChat contextData={aiAdvisorContext} />
             </Suspense>
           </section>
         )}

@@ -2720,6 +2720,117 @@ input[type='range']::-moz-range-thumb {
   margin-bottom: 4px;
 }
 
+.ai-advisor-card {
+  margin: 10px 0 24px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-base);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.ai-advisor-head h3 {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.ai-advisor-head p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.ai-advisor-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.ai-advisor-error {
+  color: var(--accent-red);
+}
+
+.ai-advisor-messages {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  max-height: 420px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ai-msg {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(13, 20, 31, 0.45);
+  padding: 8px 10px;
+}
+
+.ai-msg--assistant {
+  border-left: 3px solid var(--accent-green);
+}
+
+.ai-msg--user {
+  border-left: 3px solid var(--accent);
+}
+
+.ai-msg-role {
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.ai-msg-body {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.ai-advisor-input {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-advisor-input textarea {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  padding: 10px;
+  min-height: 92px;
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.ai-advisor-input button {
+  justify-self: end;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #041018;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.ai-advisor-input button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 *:focus-visible {
   outline: 2px solid rgba(34, 211, 238, 0.45);
   outline-offset: 2px;

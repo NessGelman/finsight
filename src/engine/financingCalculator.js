@@ -328,21 +328,22 @@ function generateAmortizedSchedule(principal, monthlyPayment, termMonths, apr, u
   const monthlyRate = apr / 100 / 12;
 
   for (let m = 1; m <= termMonths; m++) {
+    if (remaining <= 0) break;
     const interest = remaining * monthlyRate;
     let principalPaid = monthlyPayment - interest;
     if (principalPaid > remaining) principalPaid = remaining;
     remaining = Math.max(0, remaining - principalPaid);
     const feePortion = m === 1 ? upfrontFee : 0;
+    // Avoid overstating the final payment when principal is clipped by remaining balance.
+    const effectivePayment = principalPaid + interest + feePortion;
 
     schedule.push({
       month: m,
-      payment: monthlyPayment + feePortion,
+      payment: effectivePayment,
       interest: interest + feePortion,
       principal: principalPaid,
       remaining
     });
-
-    if (remaining <= 0 && m >= termMonths) break;
   }
   return schedule;
 }

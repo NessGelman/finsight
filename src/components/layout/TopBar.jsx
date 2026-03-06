@@ -5,6 +5,7 @@ const TABS = [
   { id: 'compare', label: 'Compare' },
   { id: 'optimize', label: 'Optimize' },
   { id: 'learn', label: 'Learn' },
+  { id: 'aiAdvisor', label: 'AI Advisor' },
   { id: 'assistant', label: 'Assistant' },
 ];
 
