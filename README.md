@@ -36,6 +36,13 @@ npm run lint     # lint checks
 npm run build    # production build to dist/
 npm run check    # lint + build
 npm run preview  # preview production build
+npm run test:e2e # run Playwright end-to-end tests
+```
+
+If Playwright browsers are not installed yet:
+
+```bash
+npx playwright install chromium
 ```
 
 ## Project Structure

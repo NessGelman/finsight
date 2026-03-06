@@ -1,7 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-
-const MODEL_ID = 'Xenova/flan-t5-base';
-const TRANSFORMERS_CDN_URL = 'https://esm.sh/@xenova/transformers@2.17.2?bundle';
+import { generateAdvisorText, preloadAdvisorModel } from './aiModelService';
 
 const SYSTEM_PROMPT = [
   'You are FinSight AI Advisor.',
@@ -85,15 +83,26 @@ function trimContext(contextData) {
 }
 
 function buildPrompt(context, question, turns) {
+  const byCost = [...context.results].sort((a, b) => a.totalCost - b.totalCost).slice(0, 3);
+  const byMonthly = [...context.results].sort((a, b) => a.monthlyPayment - b.monthlyPayment).slice(0, 2);
+  const byLikelihood = [...context.results].sort((a, b) => b.likelihood - a.likelihood).slice(0, 2);
   const history = turns
-    .slice(-10)
+    .slice(-8)
     .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
     .join('\n');
+  const contextSummary = [
+    `Inputs: principal=${context.inputs.principal}, annualRevenue=${context.inputs.annualRevenue}, fixedExpenses=${context.inputs.fixedExpenses}, creditScore=${context.inputs.creditScore}, businessAge=${context.inputs.businessAge}`,
+    `Top by total cost: ${byCost.map((r) => `${r.label} (${r.totalCost}, ${r.monthlyPayment}/mo, SAC ${r.sac}%)`).join(' | ')}`,
+    `Top by monthly payment: ${byMonthly.map((r) => `${r.label} (${r.monthlyPayment}/mo)`).join(' | ')}`,
+    `Top by approval likelihood: ${byLikelihood.map((r) => `${r.label} (${r.likelihood}%)`).join(' | ')}`,
+    `Selected product detail: ${context.selectedProductDetail ? JSON.stringify(context.selectedProductDetail) : 'none'}`,
+    `Rates status: ${context.ratesStatus}`,
+  ].join('\n');
 
   return `${SYSTEM_PROMPT}
 
-CONTEXT_JSON:
-${JSON.stringify(context)}
+CONTEXT_SUMMARY:
+${contextSummary}
 
 RECENT_CHAT:
 ${history}
@@ -102,6 +111,38 @@ USER_QUESTION:
 ${question}
 
 ANSWER:`;
+}
+
+function isLowQualityResponse(text) {
+  if (!text || text.length < 20) return true;
+  const normalized = text.trim();
+  if (/finsight\.com for 60 days/i.test(normalized)) return true;
+  if ((normalized.match(/\//g) ?? []).length > 14) return true;
+  const words = normalized.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length < 8) return true;
+  const uniqueRatio = new Set(words).size / words.length;
+  return uniqueRatio < 0.35;
+}
+
+function fallbackResponse(question, context) {
+  const byCost = [...context.results].sort((a, b) => a.totalCost - b.totalCost);
+  const cheapest = byCost[0];
+  const next = byCost[1];
+  const byMonthly = [...context.results].sort((a, b) => a.monthlyPayment - b.monthlyPayment);
+  const lowestMonthly = byMonthly[0];
+  const hint = context.selectedProductDetail?.label ?? cheapest?.label;
+
+  if (!cheapest) {
+    return '1) Direct answer: I need more data first.\n2) Why (with numbers): No financing results are available yet.\n3) Suggested next question: "Can you compare options once I enter my inputs?"';
+  }
+
+  return [
+    `1) Direct answer: Based on your current numbers, ${cheapest.label} is the strongest baseline choice for total cost.`,
+    `2) Why (with numbers): ${cheapest.label} is about ${Math.round(cheapest.totalCost)} total (${Math.round(cheapest.monthlyPayment)}/mo, likelihood ${Math.round(cheapest.likelihood)}%).` +
+      (next ? ` Next best is ${next.label} at about ${Math.round(next.totalCost)} total.` : '') +
+      ` Lowest monthly burden is ${lowestMonthly.label} at about ${Math.round(lowestMonthly.monthlyPayment)}/mo.`,
+    `3) Suggested next question: ${question ? `"For ${hint}, what are the biggest tradeoffs vs the next best option?"` : '"What is my best option if I care more about monthly cashflow than total cost?"'}`,
+  ].join('\n');
 }
 
 export function AIAdvisorChat({ contextData }) {
@@ -120,15 +161,13 @@ export function AIAdvisorChat({ contextData }) {
   const context = useMemo(() => trimContext(contextData), [contextData]);
 
   async function ensureModel() {
-    if (modelRef.current) return modelRef.current;
+    if (modelRef.current) return true;
     setLoadingModel(true);
     setModelError('');
     try {
-      const { pipeline, env } = await import(/* @vite-ignore */ TRANSFORMERS_CDN_URL);
-      env.allowLocalModels = false;
-      env.useBrowserCache = true;
-      modelRef.current = await pipeline('text2text-generation', MODEL_ID);
-      return modelRef.current;
+      await preloadAdvisorModel();
+      modelRef.current = true;
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load browser model.';
       setModelError(message);
@@ -148,22 +187,15 @@ export function AIAdvisorChat({ contextData }) {
     setGenerating(true);
 
     try {
-      const model = await ensureModel();
+      await ensureModel();
       const prompt = buildPrompt(context, question, nextTurns);
-      const output = await model(prompt, {
-        max_new_tokens: 220,
-        min_length: 60,
-        do_sample: true,
-        temperature: 0.7,
-        top_p: 0.92,
-        repetition_penalty: 1.08,
-      });
-      const answer = Array.isArray(output) ? output[0]?.generated_text : String(output ?? '');
+      const answer = (await generateAdvisorText(prompt)).trim();
+      const safeAnswer = isLowQualityResponse(answer) ? fallbackResponse(question, context) : answer;
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: (answer || 'I could not generate a response from the local model.').trim(),
+          content: safeAnswer || fallbackResponse(question, context),
         },
       ]);
     } catch {

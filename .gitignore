@@ -11,3 +11,5 @@ pnpm-debug.log*
 !.env.example
 .idea/
 .vscode/
+test-results/
+playwright-report/

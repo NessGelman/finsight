@@ -12,6 +12,7 @@ import { useLiveRates } from './hooks/useLiveRates';
 import { parseShareParams } from './utils/exportHelpers';
 import { calculateAllOptions } from './engine/financingCalculator';
 import { AmortizationModal } from './components/dashboard/AmortizationModal';
+import { preloadAdvisorModel } from './components/assistant/aiModelService';
 
 const CostBreakdown = lazy(() =>
   import('./components/dashboard/CostBreakdown').then((m) => ({ default: m.CostBreakdown })),
@@ -186,6 +187,29 @@ export default function App() {
       // Ignore storage failures (private mode/quota).
     }
   }, [inputs]);
+
+  useEffect(() => {
+    let timeoutId = null;
+    let idleId = null;
+    const startPreload = () => {
+      preloadAdvisorModel().catch(() => {
+        // Silent failure; user can still trigger explicit load in AI tab.
+      });
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(startPreload, { timeout: 4000 });
+    } else {
+      timeoutId = window.setTimeout(startPreload, 1200);
+    }
+
+    return () => {
+      if (timeoutId != null) window.clearTimeout(timeoutId);
+      if (idleId != null && typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }, []);
 
   return (
     <AppShell sidebar={<InputPanel inputs={inputs} onUpdate={updateInput} onReset={resetInputs} />}>
