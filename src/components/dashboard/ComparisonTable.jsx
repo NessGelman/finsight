@@ -86,15 +86,31 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
+                scope="col"
                 className={col.sortable ? 'sortable' : ''}
                 data-active={sortKey === col.key}
-                onClick={() => col.sortable && onSort(col.key)}
+                aria-sort={
+                  col.sortable && sortKey === col.key
+                    ? (sortDir === 'asc' ? 'ascending' : 'descending')
+                    : undefined
+                }
               >
-                {col.label}
-                {col.tooltip && <Tooltip content={col.tooltip} />}
-                {col.sortable && sortKey === col.key && (
-                  <span className="sort-indicator">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                {col.sortable ? (
+                  <button
+                    type="button"
+                    className="sort-header-btn"
+                    onClick={() => onSort(col.key)}
+                    aria-label={`Sort by ${col.label}`}
+                  >
+                    {col.label}
+                    {sortKey === col.key && (
+                      <span className="sort-indicator" aria-hidden="true">{sortDir === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                ) : (
+                  col.label
                 )}
+                {col.tooltip && <Tooltip content={col.tooltip} />}
               </th>
             ))}
           </tr>
@@ -103,8 +119,9 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
           {sorted.map((row, idx) => {
             const isSelected = selectedProduct === row.id;
             const isDimmed = row._matchesFilter === false;
-            const savedRow = savedResults?.find(s => s.id === row.id);
+            const savedRow = savedResults?.find((s) => s.id === row.id);
             const costDelta = savedRow ? row.totalCost - savedRow.totalCost : null;
+            const isInteractiveRow = typeof onSelectProduct === 'function';
 
             return (
               <tr
@@ -115,7 +132,15 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                   (isDimmed ? 'row-dimmed ' : '')
                 }
                 onClick={() => onSelectProduct?.(isSelected ? null : row.id)}
-                style={{ cursor: onSelectProduct ? 'pointer' : undefined }}
+                onKeyDown={(e) => {
+                  if (!isInteractiveRow) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectProduct(isSelected ? null : row.id);
+                  }
+                }}
+                tabIndex={isInteractiveRow ? 0 : undefined}
+                style={{ cursor: isInteractiveRow ? 'pointer' : undefined }}
               >
                 <td><span className="option-rank">{idx + 1}</span></td>
                 <td style={{ boxShadow: `inset 3px 0 0 ${isDimmed ? '#d1d5db' : row.color}` }}>
@@ -125,9 +150,11 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                       {row.isCheapest && <span className="option-badge-best">Best</span>}
                     </div>
                     <button
+                      type="button"
                       className="top-bar-btn"
                       style={{ fontSize: '9px', padding: '1px 5px', height: '18px', visibility: isSelected ? 'visible' : 'hidden' }}
                       onClick={(e) => { e.stopPropagation(); onShowSchedule?.(row); }}
+                      aria-label={`View payment schedule for ${row.label}`}
                     >
                       Schedule
                     </button>
@@ -154,8 +181,11 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                   {row.eligibilityWarnings?.length ? (
                     <>
                       <button
+                        type="button"
                         className="eligibility-btn eligibility-warn"
                         onClick={(e) => { e.stopPropagation(); setPopoverId(popoverId === row.id ? null : row.id); }}
+                        aria-label={`Show eligibility warnings for ${row.label}`}
+                        aria-expanded={popoverId === row.id}
                       >⚠</button>
                       {popoverId === row.id && (
                         <div className="eligibility-popover">

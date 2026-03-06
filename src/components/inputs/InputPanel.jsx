@@ -129,6 +129,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
       {/* Sidebar header with toggle */}
       <div className="sidebar-header">
         <button
+          type="button"
           className="sidebar-toggle-btn"
           onClick={onToggle}
           title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
@@ -156,7 +157,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
               <text x="44" y="31" fontFamily="system-ui,-apple-system,sans-serif" fontSize="21" fontWeight="700" fill="#4ade80">Finsight</text>
             </svg>
             {onReset && (
-              <button className="sidebar-reset-btn" onClick={onReset} title="Reset to defaults">
+              <button type="button" className="sidebar-reset-btn" onClick={onReset} title="Reset to defaults">
                 Reset
               </button>
             )}
@@ -245,6 +246,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
             <div className="purpose-toggle">
               {LOAN_PURPOSE_OPTIONS.map((opt) => (
                 <button
+                  type="button"
                   key={opt.value}
                   className={`purpose-btn${loanPurpose === opt.value ? ' active' : ''}`}
                   onClick={() => onUpdate('loanPurpose', opt.value)}
@@ -267,6 +269,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
             <div className="purpose-toggle">
               {COLLATERAL_OPTIONS.map((opt) => (
                 <button
+                  type="button"
                   key={opt.value}
                   className={`purpose-btn${collateral === opt.value ? ' active' : ''}`}
                   onClick={() => onUpdate('collateral', opt.value)}
@@ -279,15 +282,15 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
         </div>
       ) : (
         <div className="sidebar-mini-content">
-          <button className="mini-item" title="Financials" onClick={onToggle}>
+          <button type="button" className="mini-item" title="Financials" onClick={onToggle}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" /></svg>
             <span className="mini-label">Finance</span>
           </button>
-          <button className="mini-item" title="Profile" onClick={onToggle}>
+          <button type="button" className="mini-item" title="Profile" onClick={onToggle}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
             <span className="mini-label">Profile</span>
           </button>
-          <button className="mini-item" title="Details" onClick={onToggle}>
+          <button type="button" className="mini-item" title="Details" onClick={onToggle}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" /></svg>
             <span className="mini-label">Details</span>
           </button>

@@ -24,9 +24,11 @@ export function FilterBar({ activeFilter, onFilterChange, results = [] }) {
     <div className="filter-bar">
       {FILTERS.map((f) => (
         <button
+          type="button"
           key={f.id}
           className={`filter-pill${activeFilter === f.id ? ' active' : ''}`}
           onClick={() => onFilterChange(activeFilter === f.id ? 'all' : f.id)}
+          aria-pressed={activeFilter === f.id}
         >
           {f.label} {results.length > 0 ? `(${countFor(f.id)})` : ''}
         </button>
@@ -36,6 +38,7 @@ export function FilterBar({ activeFilter, onFilterChange, results = [] }) {
       </span>
       {activeFilter !== 'all' && (
         <button
+          type="button"
           className="filter-clear-btn"
           onClick={() => onFilterChange('all')}
           title="Clear active filter"

@@ -26,7 +26,7 @@ export function WhatIfPanel({ baseInputs, onScenarioChange, onReset }) {
   if (!active) {
     return (
       <div className="whatif-section">
-        <button className="btn-whatif" onClick={activate}>
+        <button type="button" className="btn-whatif" onClick={activate}>
           ⊕ Run What-If Scenario
         </button>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
@@ -40,7 +40,7 @@ export function WhatIfPanel({ baseInputs, onScenarioChange, onReset }) {
     <div className="whatif-section active">
       <div className="whatif-header">
         <h3>What-If Scenario</h3>
-        <button className="btn-reset" onClick={reset}>
+        <button type="button" className="btn-reset" onClick={reset}>
           ✕ Reset
         </button>
       </div>

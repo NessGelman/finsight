@@ -233,6 +233,7 @@ function ScenarioCard({ scenario }) {
         </div>
 
         <button
+          type="button"
           className="scenario-expand-btn"
           onClick={() => setExpanded((e) => !e)}
           aria-label={expanded ? 'Collapse' : 'Expand'}

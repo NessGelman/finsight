@@ -37,9 +37,11 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
       <div className="top-bar-tabs">
         {TABS.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             className={`top-bar-tab${activeTab === tab.id ? ' active' : ''}`}
             onClick={() => onTabChange(tab.id)}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
           >
             {tab.label}
           </button>
@@ -54,7 +56,7 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
         </div>
 
         <div className="top-bar-actions" style={{ display: 'flex', gap: '6px' }}>
-          <button className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
+          <button type="button" className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
             Reset
           </button>
           <ExportControls results={results} inputs={inputs} compact />

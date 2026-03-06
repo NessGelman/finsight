@@ -13,13 +13,19 @@ export function MethodologyPanel() {
 
   return (
     <div className="methodology-panel">
-      <button className="methodology-toggle" onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className="methodology-toggle"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="methodology-content"
+      >
         <span className="methodology-toggle-label">How We Calculate</span>
         <span className="methodology-toggle-icon">{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
-        <div className="methodology-body">
+        <div id="methodology-content" className="methodology-body">
           <div className="methodology-grid">
 
             <div className="methodology-section">

@@ -1047,7 +1047,6 @@ input[type='range']::-moz-range-thumb {
 }
 
 .comparison-table th.sortable {
-  cursor: pointer;
   transition: color 0.15s;
 }
 
@@ -1062,6 +1061,18 @@ input[type='range']::-moz-range-thumb {
 .sort-indicator {
   font-size: 10px;
   margin-left: 3px;
+}
+
+.sort-header-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  cursor: pointer;
 }
 
 .comparison-table td {

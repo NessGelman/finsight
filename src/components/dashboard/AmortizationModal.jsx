@@ -1,19 +1,35 @@
+import { useEffect } from 'react';
 import { formatCurrency, formatMonths } from '../../utils/formatters';
 
 export function AmortizationModal({ product, onClose }) {
+    useEffect(() => {
+        function handleEscape(event) {
+            if (event.key === 'Escape') onClose?.();
+        }
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
+
     if (!product) return null;
+    const titleId = `amortization-title-${product.id ?? 'option'}`;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+            >
                 <div className="modal-header">
                     <div>
-                        <h3>{product.label} Schedule</h3>
+                        <h3 id={titleId}>{product.label} Schedule</h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                             {formatMonths(product.termMonths)} Term • {formatCurrency(product.principal)} Principal
                         </p>
                     </div>
-                    <button className="modal-close" onClick={onClose}>✕</button>
+                    <button type="button" className="modal-close" onClick={onClose} aria-label="Close schedule dialog">✕</button>
                 </div>
 
                 <div className="modal-body">

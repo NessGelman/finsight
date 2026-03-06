@@ -29,13 +29,22 @@ const PROXY_FACTORIES = [
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
 ];
 
+function withTimeout(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 async function fetchFredCsv(seriesId) {
   const csvUrl = `${FRED_CSV_BASE}${seriesId}`;
 
   for (const makeProxy of PROXY_FACTORIES) {
     try {
       const res = await fetch(makeProxy(csvUrl), {
-        signal: AbortSignal.timeout(7000),
+        signal: withTimeout(7000),
         headers: { Accept: 'text/plain,text/csv,*/*' },
       });
       if (!res.ok) continue;

@@ -191,32 +191,41 @@ export default function App() {
               <span className="strategy-label">Optimization Strategy:</span>
               <div className="strategy-pills">
                 <button
+                  type="button"
                   className={`strategy-pill ${strategy === 'none' ? 'active' : ''}`}
                   onClick={() => setStrategy('none')}
+                  aria-pressed={strategy === 'none'}
                 >
                   Standard
                 </button>
                 <button
+                  type="button"
                   className={`strategy-pill ${strategy === 'speed' ? 'active' : ''}`}
                   onClick={() => setStrategy('speed')}
+                  aria-pressed={strategy === 'speed'}
                 >
                   Max Speed
                 </button>
                 <button
+                  type="button"
                   className={`strategy-pill ${strategy === 'cost' ? 'active' : ''}`}
                   onClick={() => setStrategy('cost')}
+                  aria-pressed={strategy === 'cost'}
                 >
                   Lowest Cost
                 </button>
                 <button
+                  type="button"
                   className={`strategy-pill ${strategy === 'cashflow' ? 'active' : ''}`}
                   onClick={() => setStrategy('cashflow')}
+                  aria-pressed={strategy === 'cashflow'}
                 >
                   Cashflow First
                 </button>
               </div>
 
               <button
+                type="button"
                 className="top-bar-btn"
                 style={{ marginLeft: 'auto', fontSize: '10px' }}
                 onClick={saveScenario}
@@ -231,7 +240,7 @@ export default function App() {
               {savedScenario && (
                 <div className="scenario-info-bar" style={{ padding: '6px 20px', background: 'var(--accent-dim)', fontSize: '11px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between' }}>
                   <span>Comparing against stored scenario from {savedScenario.timestamp} (${(savedScenario.inputs.principal / 1000).toFixed(0)}k @ {savedScenario.inputs.creditScore} CS)</span>
-                  <button onClick={() => setSavedScenario(null)} style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontWeight: 'bold' }}>✕ Clear</button>
+                  <button type="button" onClick={() => setSavedScenario(null)} style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer', fontWeight: 'bold' }}>✕ Clear</button>
                 </div>
               )}
 
