@@ -227,6 +227,11 @@ export function AIAdvisorChat({ contextData }) {
     }
   }
 
+  // NOTE: This function orchestrates the entire request/response/rewrite lifecycle.
+  // It's complex because it manages multiple states (generating, typingCopy, messages)
+  // and asynchronous operations (model loading, text generation).
+  // Future refactoring could break this into smaller state machines or helper hooks
+  // if the logic becomes significantly more complex.
   async function askAdvisor(rawQuestion) {
     const question = String(rawQuestion || '').trim();
     if (!question || generating) return;

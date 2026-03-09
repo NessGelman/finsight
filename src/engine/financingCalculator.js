@@ -10,18 +10,6 @@ function amortize(principal, apr, termMonths) {
   );
 }
 
-/**
- * Reverse amortization: given a target monthly payment, APR, and term,
- * returns the maximum principal that can be borrowed.
- * P = pmt × [(1 − (1 + r)^−n) / r]
- */
-export function reverseAmortize(monthlyPayment, apr, termMonths) {
-  if (!Number.isFinite(termMonths) || termMonths <= 0) return 0;
-  const monthlyRate = apr / 100 / 12;
-  if (monthlyRate === 0) return monthlyPayment * termMonths;
-  return monthlyPayment * ((1 - Math.pow(1 + monthlyRate, -termMonths)) / monthlyRate);
-}
-
 // ─── Per-product calculation functions ───────────────────────────────────────
 
 function annualizedCostMetrics(principal, totalCost, termMonths) {

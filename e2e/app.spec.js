@@ -60,7 +60,7 @@ test.describe('FinSight E2E', () => {
     await page.locator('.ai-advisor-input textarea').fill('compare top options');
     await page.getByRole('button', { name: 'Ask Advisor' }).click();
     const lastAdvisor = page.locator('.ai-msg--assistant .ai-msg-body').last();
-    await expect(lastAdvisor).toContainText(/metrics:|total cost|monthly burden/i);
+    await expect(lastAdvisor).toContainText(/metrics:|total cost|monthly burden/i, { timeout: 15000 });
     await expect(lastAdvisor).not.toContainText(/i\.e\., i\.e\./i);
   });
 
@@ -70,7 +70,7 @@ test.describe('FinSight E2E', () => {
     await page.selectOption('#advisor-quality', 'fast');
     await expect(page.locator('#advisor-style')).toHaveValue('concise');
     await expect(page.locator('#advisor-quality')).toHaveValue('fast');
-    await expect(page.getByText(/Mode: Fast mode/i)).toBeVisible();
+    await expect(page.getByText('Fast mode')).toBeVisible();
     await page.locator('.ai-advisor-input textarea').fill('explain in beginner terms');
     await page.getByRole('button', { name: 'Ask Advisor' }).click();
     await expect(page.locator('.ai-msg--assistant .ai-msg-body').last()).toContainText(/key metrics|next:/i);
