@@ -51,21 +51,36 @@ const FOCUS_HEADLINES = {
   options: 'Option-by-option guidance',
 };
 
+function isHardBlocked(result) {
+  return result.eligibilityWarnings?.some((w) => /requires?/i.test(w));
+}
+
 function pickTopOptions(results, focus) {
-  if (!results.length) return [];
+  if (!results || !results.length) return [];
 
-  if (focus === 'cashflow') {
-    return [...results].sort((a, b) => a.monthlyPayment - b.monthlyPayment).slice(0, 3);
-  }
+  const sorter = (a, b) => {
+    // 1. Eligibility: Push hard-blocked options to the bottom
+    const aBlocked = isHardBlocked(a);
+    const bBlocked = isHardBlocked(b);
+    if (aBlocked !== bBlocked) return aBlocked ? 1 : -1;
 
-  if (focus === 'risk') {
-    const burden = (val) => (Number.isFinite(val) ? val : Number.POSITIVE_INFINITY);
-    return [...results]
-      .sort((a, b) => burden(a.freeCashflowPct) - burden(b.freeCashflowPct) || a.totalCost - b.totalCost)
-      .slice(0, 3);
-  }
+    // 2. Focus metric
+    if (focus === 'cashflow') {
+      return a.monthlyPayment - b.monthlyPayment;
+    }
+    if (focus === 'risk') {
+      // Lower burden is better. Handle NaN (infinite burden) by treating as Infinity.
+      const burdenA = Number.isFinite(a.freeCashflowPct) ? a.freeCashflowPct : Infinity;
+      const burdenB = Number.isFinite(b.freeCashflowPct) ? b.freeCashflowPct : Infinity;
+      if (Math.abs(burdenA - burdenB) > 0.1) return burdenA - burdenB;
+      // Tie-break: Higher likelihood is better
+      return b.likelihood - a.likelihood;
+    }
+    // Default: Total Cost
+    return a.totalCost - b.totalCost;
+  };
 
-  return [...results].sort((a, b) => a.totalCost - b.totalCost).slice(0, 3);
+  return [...results].sort(sorter).slice(0, 3);
 }
 
 function staticInsights(fluency, time) {
@@ -73,27 +88,40 @@ function staticInsights(fluency, time) {
   return time === 'short' ? level.short : level.long;
 }
 
-export function LearningAssistant({ results, inputs }) {
+export function LearningAssistant({ results = [], inputs = {} }) {
   const [fluency, setFluency] = useState('beginner');
   const [time, setTime] = useState('short');
   const [focus, setFocus] = useState('overview');
 
   const guidance = useMemo(() => {
-    const topOptions = pickTopOptions(results, focus);
-    const cheapest = results.length
-      ? results.reduce((best, current) => (current.totalCost < best.totalCost ? current : best), results[0])
-      : null;
+    const safeInputs = {
+      principal: inputs?.principal ?? 0,
+      annualRevenue: inputs?.annualRevenue ?? 0,
+      creditScore: inputs?.creditScore ?? 0,
+    };
 
-    const scenario = `${formatCurrency(inputs.principal)} principal, ${formatCurrency(inputs.annualRevenue)} annual revenue, credit score ${inputs.creditScore}.`;
+    const topOptions = pickTopOptions(results, focus);
+    
+    const sortedByCost = [...results].sort((a, b) => a.totalCost - b.totalCost);
+    const cheapest = sortedByCost[0];
+    const bestEligible = sortedByCost.find((r) => !isHardBlocked(r));
+
+    const scenario = `${formatCurrency(safeInputs.principal)} principal, ${formatCurrency(safeInputs.annualRevenue)} annual revenue, credit score ${safeInputs.creditScore}.`;
 
     const dynamicBullets = topOptions.map((opt) => {
-      const burden = Number.isFinite(opt.freeCashflowPct) ? `, burden ${formatPercent(opt.freeCashflowPct, 1)}` : '';
-      return `${opt.label}: total ${formatCurrency(opt.totalCost)}, SAC ${formatPercent(opt.sac, 1)}${burden}.`;
+      const burden = Number.isFinite(opt.freeCashflowPct) ? `, burden ${formatPercent(opt.freeCashflowPct, 1)}` : ', high burden';
+      const blocked = isHardBlocked(opt) ? ' (May not qualify)' : '';
+      return `${opt.label}: total ${formatCurrency(opt.totalCost)}, SAC ${formatPercent(opt.sac, 1)}${burden}${blocked}.`;
     });
 
-    const recommendation = cheapest
-      ? `Current lowest total estimated cost is ${cheapest.label} at ${formatCurrency(cheapest.totalCost)}.`
-      : 'Enter financing inputs to generate live recommendation details.';
+    let recommendation = 'Enter financing inputs to generate live recommendation details.';
+    if (results.length > 0) {
+      if (bestEligible) {
+        recommendation = `Best eligible option is ${bestEligible.label} at ${formatCurrency(bestEligible.totalCost)}.${cheapest && cheapest.id !== bestEligible.id ? ` ${cheapest.label} is cheaper but may require better qualifications.` : ''}`;
+      } else if (cheapest) {
+        recommendation = `Lowest cost is ${cheapest.label} (${formatCurrency(cheapest.totalCost)}), but you have eligibility warnings on all options.`;
+      }
+    }
 
     return {
       headline: FOCUS_HEADLINES[focus],
@@ -165,4 +193,3 @@ export function LearningAssistant({ results, inputs }) {
     </div>
   );
 }
-
