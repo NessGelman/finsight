@@ -129,22 +129,24 @@ function shouldRewrite(question, prefs) {
 function StreamedText({ text, speed = 30 }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
+  const indexRef = useRef(0);
   
   useEffect(() => {
     if (!text) {
       setDisplayedText('');
       setIsComplete(false);
+      indexRef.current = 0;
       return;
     }
     
-    setDisplayedText('');
-    setIsComplete(false);
+    // If text grew, we just continue. If text changed completely (new message), we might want to reset.
+    // For this simple implementation, we assume text only appends or is a new message.
+    // We won't reset displayedText here to avoid flickering on stream updates.
     
-    let index = 0;
     const timer = setInterval(() => {
-      if (index < text.length) {
-        setDisplayedText(text.slice(0, index + 1));
-        index++;
+      if (indexRef.current < text.length) {
+        setDisplayedText(text.slice(0, indexRef.current + 1));
+        indexRef.current++;
       } else {
         clearInterval(timer);
         setIsComplete(true);
@@ -152,7 +154,7 @@ function StreamedText({ text, speed = 30 }) {
     }, speed);
     
     return () => clearInterval(timer);
-  }, [text, speed]);
+  }, [text, speed]); // Re-runs on every chunk, but indexRef preserves position
   
   return <span>{displayedText}{!isComplete && <span className="streaming-cursor">▊</span>}</span>;
 }
@@ -176,7 +178,6 @@ export function AIAdvisorChat({ contextData }) {
     styleMode: 'hybrid',
     qualityMode: 'balanced',
   });
-  const [streamingMessageId, setStreamingMessageId] = useState(null);
 
   const context = useMemo(() => trimContext(contextData), [contextData]);
   const quickReplies = useMemo(() => getQuickReplies(advisorPrefs.styleMode), [advisorPrefs.styleMode]);
@@ -251,7 +252,6 @@ export function AIAdvisorChat({ contextData }) {
     };
     
     setMessages((prev) => [...prev, assistantMessage]);
-    setStreamingMessageId(assistantMessageId);
 
     if (!shouldRewrite(question, advisorPrefs)) {
       setGenerating(false);
@@ -261,7 +261,6 @@ export function AIAdvisorChat({ contextData }) {
           m.id === assistantMessageId ? { ...m, isStreaming: false } : m
         )
       );
-      setStreamingMessageId(null);
       return;
     }
 
@@ -328,7 +327,6 @@ export function AIAdvisorChat({ contextData }) {
     } finally {
       setGenerating(false);
       setTypingCopy('');
-      setStreamingMessageId(null);
     }
   }
 
@@ -493,4 +491,3 @@ export function AIAdvisorChat({ contextData }) {
     </div>
   );
 }
-
