@@ -133,10 +133,12 @@ function StreamedText({ text, speed = 30 }) {
   
   useEffect(() => {
     if (!text) {
-      setDisplayedText('');
-      setIsComplete(false);
-      indexRef.current = 0;
-      return;
+      const t = setTimeout(() => {
+        setDisplayedText('');
+        setIsComplete(false);
+        indexRef.current = 0;
+      }, 0);
+      return () => clearTimeout(t);
     }
     
     // If text grew, we just continue. If text changed completely (new message), we might want to reset.
@@ -145,6 +147,7 @@ function StreamedText({ text, speed = 30 }) {
     
     const timer = setInterval(() => {
       if (indexRef.current < text.length) {
+        setIsComplete(false);
         setDisplayedText(text.slice(0, indexRef.current + 1));
         indexRef.current++;
       } else {
