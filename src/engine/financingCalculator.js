@@ -58,7 +58,7 @@ function calcSBA(principal, apr, termMonths) {
   const feeAmount = guaranteeFee;
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
-  const monthlyPayment = totalCost / termMonths;
+  const monthlyPayment = contractualMonthlyPayment;
   const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
@@ -88,7 +88,7 @@ function calcLineOfCredit(principal, apr, termMonths) {
     totalInterest,
     interestAmount,
     feeAmount,
-    monthlyPayment: totalCost / termMonths,
+    monthlyPayment: monthlyInterest,
     sac,
     eac,
     termMonths,
@@ -167,7 +167,7 @@ function calcTermLoan(principal, apr, termMonths) {
   const feeAmount = originationFee;
   const totalInterest = interestAmount + feeAmount;
   const totalCost = principal + totalInterest;
-  const monthlyPayment = totalCost / termMonths;
+  const monthlyPayment = contractualMonthlyPayment;
   const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
   return {
     totalCost,
