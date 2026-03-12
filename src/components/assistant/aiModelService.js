@@ -54,7 +54,7 @@ function withTimeout(promise, timeoutMs, errorMessage) {
 
 async function loadModelTier(tier, { timeoutMs = 0 } = {}) {
   if (modelInstances.has(tier)) return modelInstances.get(tier);
-  if (modelPromises.has(tier)) return modelPromises.get(tier);
+  if (modelPromises.has(tier)) return withTimeout(modelPromises.get(tier), timeoutMs, `Model preload timeout (${tier})`);
 
   const modelId = MODEL_LADDER[tier];
   const promise = (async () => {

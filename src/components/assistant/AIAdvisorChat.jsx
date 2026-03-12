@@ -130,7 +130,7 @@ function StreamedText({ text, speed = 30 }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
-  
+
   useEffect(() => {
     if (!text) {
       const t = setTimeout(() => {
@@ -140,11 +140,11 @@ function StreamedText({ text, speed = 30 }) {
       }, 0);
       return () => clearTimeout(t);
     }
-    
+
     // If text grew, we just continue. If text changed completely (new message), we might want to reset.
     // For this simple implementation, we assume text only appends or is a new message.
     // We won't reset displayedText here to avoid flickering on stream updates.
-    
+
     const timer = setInterval(() => {
       if (indexRef.current < text.length) {
         setIsComplete(false);
@@ -155,10 +155,10 @@ function StreamedText({ text, speed = 30 }) {
         setIsComplete(true);
       }
     }, speed);
-    
+
     return () => clearInterval(timer);
   }, [text, speed]); // Re-runs on every chunk, but indexRef preserves position
-  
+
   return <span>{displayedText}{!isComplete && <span className="streaming-cursor">▊</span>}</span>;
 }
 
@@ -242,33 +242,27 @@ export function AIAdvisorChat({ contextData }) {
       content: question,
       timestamp: new Date().toISOString(),
     };
-    
+
     const nextTurns = [...messages, userMessage];
     setMessages(nextTurns);
     setGenerating(true);
     setTypingCopy('Thinking through your numbers...');
 
     const deterministic = buildDeterministicResponse(question, context, advisorPrefs.styleMode);
-    
+
     const assistantMessageId = Date.now().toString();
-    const assistantMessage = {
-      role: 'assistant',
-      content: deterministic,
-      timestamp: new Date().toISOString(),
-      isStreaming: true,
-      id: assistantMessageId,
-    };
-    
-    setMessages((prev) => [...prev, assistantMessage]);
 
     if (!shouldRewrite(question, advisorPrefs)) {
+      const assistantMessage = {
+        role: 'assistant',
+        content: deterministic,
+        timestamp: new Date().toISOString(),
+        isStreaming: true,
+        id: assistantMessageId,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
       setGenerating(false);
       setTypingCopy('');
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantMessageId ? { ...m, isStreaming: false } : m
-        )
-      );
       return;
     }
 
@@ -282,6 +276,7 @@ export function AIAdvisorChat({ contextData }) {
       const rewriteTier = preferredTier === 'balanced' && !status.loadedTiers.includes('balanced')
         ? 'fast'
         : preferredTier;
+
       if (preferredTier === 'balanced' && rewriteTier !== 'balanced') {
         preloadAdvisorModel({ tier: 'balanced', budgetMs: 5000 }).catch(() => {
           // Warm balanced tier in background without blocking first response latency.
@@ -300,38 +295,44 @@ export function AIAdvisorChat({ contextData }) {
         memorySummary,
         recentTurns,
       });
-      let rewritten = (await generateAdvisorText(prompt, {
-        tier: rewriteTier,
-        styleMode: advisorPrefs.styleMode,
-      })).trim();
+
+      let rewritten = '';
       if (getTestOverrides().forceBadRewrite) {
         rewritten = 'i.e., i.e., i.e., / / / / /';
+      } else {
+        rewritten = (await generateAdvisorText(prompt, {
+          tier: rewriteTier,
+          styleMode: advisorPrefs.styleMode,
+        })).trim();
       }
 
-      if (isAcceptableRewrite(deterministic, rewritten, context)) {
-        setMessages((prev) => {
-          const updated = [...prev];
-          for (let i = updated.length - 1; i >= 0; i--) {
-            if (updated[i].id === assistantMessageId) {
-              updated[i] = { 
-                ...updated[i], 
-                content: rewritten, 
-                isStreaming: false,
-                enhanced: true 
-              };
-              break;
-            }
-          }
-          return updated;
-        });
-      }
+      const finalContent = isAcceptableRewrite(deterministic, rewritten, context) ? rewritten : deterministic;
+      const enhanced = finalContent === rewritten;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: finalContent,
+          timestamp: new Date().toISOString(),
+          isStreaming: true,
+          enhanced,
+          id: assistantMessageId,
+        }
+      ]);
+
     } catch {
-      // Keep deterministic response already posted.
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantMessageId ? { ...m, isStreaming: false } : m
-        )
-      );
+      // Fallback if model fails.
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: deterministic,
+          timestamp: new Date().toISOString(),
+          isStreaming: true,
+          id: assistantMessageId,
+        }
+      ]);
     } finally {
       setGenerating(false);
       setTypingCopy('');
@@ -351,10 +352,10 @@ export function AIAdvisorChat({ contextData }) {
 
   const formatTimestamp = (isoString) => {
     const date = new Date(isoString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -404,8 +405,8 @@ export function AIAdvisorChat({ contextData }) {
           </select>
         </div>
         <div className="clear-chat-cell">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="clear-chat-btn"
             onClick={() => setMessages([{
               role: 'assistant',
@@ -421,8 +422,8 @@ export function AIAdvisorChat({ contextData }) {
 
       <div className="ai-advisor-messages" aria-live="polite">
         {messages.map((m, idx) => (
-          <div 
-            key={`${m.role}-${idx}-${m.timestamp}`} 
+          <div
+            key={`${m.role}-${idx}-${m.timestamp}`}
             className={`ai-msg ai-msg--${m.role} ${m.enhanced ? 'ai-msg--enhanced' : ''}`}
           >
             <div className="ai-msg-header">
@@ -481,9 +482,9 @@ export function AIAdvisorChat({ contextData }) {
           placeholder="Ask about costs, approvals, cashflow burden, schedules, or tradeoffs..."
           rows={3}
         />
-        <button 
-          type="button" 
-          onClick={() => askAdvisor(draft)} 
+        <button
+          type="button"
+          onClick={() => askAdvisor(draft)}
           disabled={generating || !draft.trim()}
           className="ask-btn"
         >

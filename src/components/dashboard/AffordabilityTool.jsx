@@ -22,7 +22,10 @@ export function AffordabilityTool({ liveRates }) {
       if (!params) return null;
 
       let maxPrincipal;
-      if (params.apr !== undefined) {
+      if (id === 'lineOfCredit') {
+        const monthlyRate = params.apr / 100 / 12;
+        maxPrincipal = monthlyRate > 0 ? targetMonthly / monthlyRate : targetMonthly * params.termMonths;
+      } else if (params.apr !== undefined) {
         maxPrincipal = reverseAmortize(targetMonthly, params.apr, params.termMonths);
       } else {
         // MCA / factoring — not amortized, skip
