@@ -73,11 +73,12 @@ function calcSBA(principal, apr, termMonths) {
   };
 }
 
-function calcLineOfCredit(principal, apr, termMonths) {
-  // Interest-only monthly, principal repaid at end. Annual maintenance fee 0.75%.
+function calcLineOfCredit(principal, apr, termMonths, utilization = 1) {
+  // Interest-only monthly, principal repaid at end. Annual maintenance fee 0.75% of utilized balance.
+  const use = Math.min(Math.max(utilization, 0), 1);
   const monthlyRate = apr / 100 / 12;
-  const monthlyInterest = principal * monthlyRate;
-  const annualFee = principal * 0.0075;
+  const monthlyInterest = principal * monthlyRate * use;
+  const annualFee = principal * 0.0075 * use;
   const feeAmount = annualFee * (termMonths / 12);
   const interestAmount = monthlyInterest * termMonths;
   const totalInterest = interestAmount + feeAmount;
@@ -92,6 +93,7 @@ function calcLineOfCredit(principal, apr, termMonths) {
     sac,
     eac,
     termMonths,
+    utilization: use,
   };
 }
 
@@ -131,22 +133,32 @@ function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
 
 function calcRBF(principal, capRate, annualRevenue) {
   // Repayment cap model: borrow $X, pay back $X × capRate total.
-  // Start with 10% of monthly revenue as target share, then cap modeled term to 48 months.
-  // If the cap binds, payment is normalized so payment × term = total cost.
+  // 10% of monthly revenue is modeled as the sweep; term is derived from that sweep and capped.
   const totalCost = principal * capRate;
   const feeAmount = totalCost - principal;
   const monthlyRevenue = annualRevenue / 12;
-  const targetRevenueSharePayment = monthlyRevenue * 0.10;
-  const unconstrainedTerm = targetRevenueSharePayment > 0
-    ? Math.ceil(totalCost / targetRevenueSharePayment)
+  const revenueSharePayment = monthlyRevenue * 0.10;
+  const expectedTermMonths = revenueSharePayment > 0
+    ? Math.ceil(totalCost / revenueSharePayment)
     : 48;
-  const estimatedTerm = Math.min(Math.max(6, unconstrainedTerm), 48);
-  // Keep payment/term/total mathematically coherent when term is capped.
-  const monthlyPayment = totalCost / estimatedTerm;
+  const termMonths = Math.min(Math.max(6, expectedTermMonths), 48);
+  // Keep math coherent for cost comparisons while exposing the revenue-share signal.
+  const monthlyPayment = totalCost / termMonths;
   const interestAmount = 0;
   const totalInterest = feeAmount;
-  const { sac, eac } = annualizedCostMetrics(principal, totalCost, estimatedTerm);
-  return { totalCost, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths: estimatedTerm };
+  const { sac, eac } = annualizedCostMetrics(principal, totalCost, termMonths);
+  return {
+    totalCost,
+    totalInterest,
+    interestAmount,
+    feeAmount,
+    monthlyPayment,
+    sac,
+    eac,
+    termMonths,
+    expectedTermMonths,
+    revenueSharePayment,
+  };
 }
 
 function calcEquipmentFinancing(principal, apr, termMonths) {
@@ -284,33 +296,42 @@ function getEligibility(id, { creditScore, businessAge, annualRevenue, principal
 
 // ─── Approval Odds Logic ──────────────────────────────────────────────────
 function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry, collateral = 'none' }) {
+  // Defensive defaults keep the model stable when inputs are missing.
+  const cs = Number.isFinite(creditScore) ? creditScore : 650;
+  const age = Number.isFinite(businessAge) ? businessAge : 2;
+  const revenue = Number.isFinite(annualRevenue) ? annualRevenue : 0;
+  const amount = Number.isFinite(principal) ? principal : 0;
+  const collateralLevel = collateral || 'none';
+
   let score = 100;
 
-  // Global modifiers
-  if (creditScore < 550) score -= 40;
-  if (creditScore < 600) score -= 20;
-  if (creditScore > 740) score += 10;
-  if (businessAge < 1) score -= 30;
-  if (businessAge > 5) score += 15;
-  if (collateral === 'partial') score += 8;
-  if (collateral === 'full') score += 16;
+  // Global modifiers (mutually exclusive credit bands to avoid double-penalizing subprime borrowers)
+  if (cs < 550) score -= 40;
+  else if (cs < 600) score -= 20;
+  else if (cs > 740) score += 10;
+
+  if (age < 1) score -= 30;
+  else if (age > 5) score += 15;
+
+  if (collateralLevel === 'partial') score += 8;
+  else if (collateralLevel === 'full') score += 16;
 
   // Product specific logic
   switch (id) {
     case 'sba':
-      if (creditScore < 640) score -= 50;
-      if (businessAge < 2) score -= 40;
+      if (cs < 640) score -= 50;
+      if (age < 2) score -= 40;
       if (industry === 'cannabis') score = 0;
       break;
     case 'mca':
       score += 20; // MCA is easy to get
-      if (annualRevenue < principal) score -= 50;
+      if (revenue < amount) score -= 50;
       break;
     case 'lineOfCredit':
-      if (creditScore < 680) score -= 30;
+      if (cs < 680) score -= 30;
       break;
     case 'revenueBased':
-      if (annualRevenue < 150000) score -= 30;
+      if (revenue < 150000) score -= 30;
       if (industry === 'technology') score += 10;
       break;
     default:
@@ -441,6 +462,7 @@ export function calculateAllOptions(
   liveRates = null,
   options = { skipSchedules: false }
 ) {
+  const { skipSchedules = false, locUtilizationPct = 1 } = options || {};
   const monthlyRevenue = annualRevenue / 12;
   const monthlyFreeCashflow = monthlyRevenue - fixedExpenses;
 
@@ -466,7 +488,7 @@ export function calculateAllOptions(
         calc = calcSBA(principal, params.apr, params.termMonths);
         break;
       case 'lineOfCredit':
-        calc = calcLineOfCredit(principal, params.apr, params.termMonths);
+        calc = calcLineOfCredit(principal, params.apr, params.termMonths, locUtilizationPct);
         break;
       case 'mca':
         calc = calcMCA(principal, params.factorRate, params.termMonths);
@@ -489,7 +511,7 @@ export function calculateAllOptions(
 
     const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry, collateral });
 
-    const schedule = options.skipSchedules ? [] : generateScheduleByProduct(id, calc, params, principal);
+    const schedule = skipSchedules ? [] : generateScheduleByProduct(id, calc, params, principal);
 
     return {
       id,
@@ -499,7 +521,7 @@ export function calculateAllOptions(
       likelihood,
       schedule,
       speedOrder: SPEED_MAP[id] || 99,
-      freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : Number.NaN,
+      freeCashflowPct: monthlyFreeCashflow > 0 ? (calc.monthlyPayment / monthlyFreeCashflow) * 100 : null,
       eligibilityWarnings: getEligibility(id, {
         creditScore,
         businessAge,
