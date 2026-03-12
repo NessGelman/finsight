@@ -106,7 +106,7 @@ export function SensitivityChart({ inputs, liveRates }) {
         prime: { value: base + delta },
         creditCard: liveRates?.creditCard, // CC rate is separate survey, not prime-linked
       };
-      const results = calculateAllOptions(inputs, adjustedRates);
+      const results = calculateAllOptions(inputs, adjustedRates, { skipSchedules: true });
       const row = { delta };
       for (const r of results) {
         if (RATE_SENSITIVE.includes(r.id)) {
@@ -118,7 +118,7 @@ export function SensitivityChart({ inputs, liveRates }) {
 
     const allCosts = data.flatMap((d) => RATE_SENSITIVE.map((id) => d[id]).filter(Boolean));
     const byCollateral = COLLATERAL_LEVELS.map((level) => {
-      const resultSet = calculateAllOptions({ ...inputs, collateral: level.id }, liveRates);
+      const resultSet = calculateAllOptions({ ...inputs, collateral: level.id }, liveRates, { skipSchedules: true });
       const eligible = resultSet.filter((r) => !r.eligibilityWarnings?.some((w) => /requires?/i.test(w)));
       const pool = eligible.length ? eligible : resultSet;
       const best = [...pool].sort((a, b) => a.totalCost - b.totalCost)[0];

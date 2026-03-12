@@ -438,7 +438,8 @@ export function calculateAllOptions(
     industry = 'general',
     collateral = 'none',
   },
-  liveRates = null
+  liveRates = null,
+  options = { skipSchedules: false }
 ) {
   const monthlyRevenue = annualRevenue / 12;
   const monthlyFreeCashflow = monthlyRevenue - fixedExpenses;
@@ -488,7 +489,7 @@ export function calculateAllOptions(
 
     const likelihood = getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principal, industry, collateral });
 
-    const schedule = generateScheduleByProduct(id, calc, params, principal);
+    const schedule = options.skipSchedules ? [] : generateScheduleByProduct(id, calc, params, principal);
 
     return {
       id,

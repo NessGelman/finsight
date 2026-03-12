@@ -132,7 +132,7 @@ export default function App() {
   const saveScenario = useCallback(() => {
     setSavedScenario({
       inputs: { ...inputs },
-      results: calculateAllOptions(inputs, rates),
+      results: calculateAllOptions(inputs, rates, { skipSchedules: true }),
       timestamp: new Date().toLocaleTimeString()
     });
   }, [inputs, rates]);

@@ -40,7 +40,7 @@ function generateScenarios(baseInputs, baseResults, liveRates) {
   // 1. Credit score boost (if not already excellent)
   if (baseInputs.creditScore < 800) {
     const newScore = Math.min(baseInputs.creditScore + 60, 800);
-    const newRaw = calculateAllOptions({ ...baseInputs, creditScore: newScore }, liveRates);
+    const newRaw = calculateAllOptions({ ...baseInputs, creditScore: newScore }, liveRates, { skipSchedules: true });
     const newBest = newRaw.reduce((a, b) => (a.totalCost < b.totalCost ? a : b));
     scenarios.push({
       id: 'creditBoost',
@@ -60,7 +60,7 @@ function generateScenarios(baseInputs, baseResults, liveRates) {
   // 2. Borrow half the amount
   if (baseInputs.principal >= 20000) {
     const halfP = Math.round(baseInputs.principal / 2 / 5000) * 5000 || 5000;
-    const newRaw = calculateAllOptions({ ...baseInputs, principal: halfP }, liveRates);
+    const newRaw = calculateAllOptions({ ...baseInputs, principal: halfP }, liveRates, { skipSchedules: true });
     const newBest = newRaw.reduce((a, b) => (a.totalCost < b.totalCost ? a : b));
     scenarios.push({
       id: 'halfAmount',
@@ -82,7 +82,7 @@ function generateScenarios(baseInputs, baseResults, liveRates) {
   if (sbaCurrent && isHardBlocked(sbaCurrent)) {
     const newAge = Math.max(baseInputs.businessAge, 2);
     const newScore = Math.max(baseInputs.creditScore, 640);
-    const newRaw = calculateAllOptions({ ...baseInputs, businessAge: newAge, creditScore: newScore }, liveRates);
+    const newRaw = calculateAllOptions({ ...baseInputs, businessAge: newAge, creditScore: newScore }, liveRates, { skipSchedules: true });
     const sbaResult = newRaw.find((r) => r.id === 'sba');
     const savings = baseBest.totalCost - sbaResult.totalCost;
     scenarios.push({
@@ -103,7 +103,7 @@ function generateScenarios(baseInputs, baseResults, liveRates) {
   // 4. Revenue growth (+50%) — shows cashflow impact
   if (baseInputs.annualRevenue < 5_000_000) {
     const newRevenue = Math.round((baseInputs.annualRevenue * 1.5) / 10000) * 10000;
-    const newRaw = calculateAllOptions({ ...baseInputs, annualRevenue: newRevenue }, liveRates);
+    const newRaw = calculateAllOptions({ ...baseInputs, annualRevenue: newRevenue }, liveRates, { skipSchedules: true });
     const currentBestInNew = newRaw.find((r) => r.id === baseBest.id);
     const fcfBefore = baseBest.freeCashflowPct;
     const fcfAfter = currentBestInNew?.freeCashflowPct ?? fcfBefore;
@@ -298,9 +298,9 @@ function ScenarioCard({ scenario }) {
 
 function SpeedGrid({ results }) {
   const tiers = {
-    fast:   results.filter((r) => SPEED[r.id]?.tier === 'fast'),
+    fast: results.filter((r) => SPEED[r.id]?.tier === 'fast'),
     medium: results.filter((r) => SPEED[r.id]?.tier === 'medium'),
-    slow:   results.filter((r) => SPEED[r.id]?.tier === 'slow'),
+    slow: results.filter((r) => SPEED[r.id]?.tier === 'slow'),
   };
 
   return (
@@ -311,9 +311,9 @@ function SpeedGrid({ results }) {
       </div>
       <div className="speed-grid">
         {[
-          { key: 'fast',   label: '⚡ Fast',     sub: '< 1 week',   color: 'var(--accent-green)' },
-          { key: 'medium', label: '⏱ Medium',    sub: '1–2 weeks',  color: 'var(--accent-amber)' },
-          { key: 'slow',   label: '🕐 Patient',  sub: '1–2 months', color: 'var(--accent-red)' },
+          { key: 'fast', label: '⚡ Fast', sub: '< 1 week', color: 'var(--accent-green)' },
+          { key: 'medium', label: '⏱ Medium', sub: '1–2 weeks', color: 'var(--accent-amber)' },
+          { key: 'slow', label: '🕐 Patient', sub: '1–2 months', color: 'var(--accent-red)' },
         ].map(({ key, label, sub, color }) => (
           <div key={key} className="speed-tier">
             <div className="speed-tier-header" style={{ color }}>
