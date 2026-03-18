@@ -110,7 +110,23 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
     employeeCount = 10,
     preferredTermMonths = 36,
     desiredMonthlyPayment = 3000,
+    fredApiKey = '',
   } = inputs;
+
+  // Get stored key for display, mask it
+  const displayKey = fredApiKey || localStorage.getItem('fredApiKey') || '';
+  const maskedKey = displayKey ? `${displayKey.slice(0,4)}****${displayKey.slice(-4)}` : '';
+
+  const handleKeyChange = (e) => {
+    const value = e.target.value;
+    onUpdate('fredApiKey', value);
+    localStorage.setItem('fredApiKey', value);
+  };
+
+  const handleRefreshRates = () => {
+    // Dispatch custom event to trigger useLiveRates refresh
+    window.dispatchEvent(new CustomEvent('refreshRates'));
+  };
 
   const monthlyRevenue = Math.round(annualRevenue / 12);
 
@@ -278,6 +294,30 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
                 </button>
               ))}
             </div>
+          </InputGroup>
+
+          <div className="sidebar-section-label">Data</div>
+
+          <InputGroup data-accent="indigo" label="FRED API Key (Live Rates)" tooltip="Free key from https://fred.stlouisfed.org/docs/api/api_key.html enables real-time Prime &amp; Credit rates.">
+            <div className="api-key-input-wrap">
+              <input
+                type="password"
+                className="api-key-input"
+                value={maskedKey}
+                onChange={handleKeyChange}
+                placeholder="Enter FRED API key"
+                title="Key saved to localStorage.fredApiKey"
+              />
+              <button
+                type="button"
+                className="refresh-btn"
+                onClick={handleRefreshRates}
+                title="Refresh live rates"
+              >
+                ↻
+              </button>
+            </div>
+            {displayKey && <span className="input-sub">Configured ({displayKey.length} chars) — Rates: live when available</span>}
           </InputGroup>
         </div>
       ) : (

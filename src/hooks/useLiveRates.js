@@ -16,23 +16,34 @@ export function useLiveRates() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchLiveRates()
-      .then((data) => {
-        if (cancelled) return;
-        setRates(data);
-        setStatus(data.fromCache ? 'cached' : 'live');
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setRates({
-          prime: FALLBACK_RATES.prime,
-          creditCard: FALLBACK_RATES.creditCard,
-          live: false,
+    const fetchAndUpdate = () => {
+      fetchLiveRates()
+        .then((data) => {
+          if (cancelled) return;
+          setRates(data);
+          setStatus(data.fromCache ? 'cached' : 'live');
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setRates({
+            prime: FALLBACK_RATES.prime,
+            creditCard: FALLBACK_RATES.creditCard,
+            live: false,
+          });
+          setStatus('fallback');
         });
-        setStatus('fallback');
-      });
+    };
 
-    return () => { cancelled = true; };
+    fetchAndUpdate();
+
+    const handleRefresh = () => fetchAndUpdate();
+
+    window.addEventListener('refreshRates', handleRefresh);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('refreshRates', handleRefresh);
+    };
   }, []);
 
   return { rates, status };
