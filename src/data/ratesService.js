@@ -1,110 +1,95 @@
 /**
- * Live rate fetching from Federal Reserve FRED database.
- *
- * Sources:
- *   PRIME          — Bank Prime Loan Rate (weekly)
- *                    https://fred.stlouisfed.org/series/PRIME
- *   TERMCBCCALLNS  — Credit Card Interest Rates, All Accounts (quarterly)
- *                    https://fred.stlouisfed.org/series/TERMCBCCALLNS
- *
- * FRED CSV endpoints are publicly accessible without an API key.
- * We route through CORS proxies since browsers block cross-origin fetches.
- * Falls back to static estimates if all proxies are unavailable.
+ * Secure FRED rates service.
+ * Static fallback + optional official API (free key required).
+ * No proxies - direct api.stlouisfed.org calls only.
  */
 
-const CACHE_KEY = 'finsight_live_rates_v2';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_KEY = 'finsight-v1-rates';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-// Static fallback rates (approximate recent values)
-export const FALLBACK_RATES = {
-  prime: { value: 7.5, date: 'estimated', live: false },
-  creditCard: { value: 21.5, date: 'estimated', live: false },
+export const STATIC_RATES = {
+  prime: { value: 7.5, date: '2024-Oct (static)', live: false },
+  creditCard: { value: 21.47, date: 'Q3 2024 (static)', live: false },
 };
 
-const FRED_CSV_BASE = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id=';
-
-// CORS proxy factories — tried in order until one succeeds
-const PROXY_FACTORIES = [
-  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-];
-
-function withTimeout(ms) {
-  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    return AbortSignal.timeout(ms);
-  }
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), ms);
-  return controller.signal;
-}
-
-async function fetchFredCsv(seriesId) {
-  const csvUrl = `${FRED_CSV_BASE}${seriesId}`;
-
-  for (const makeProxy of PROXY_FACTORIES) {
-    try {
-      const res = await fetch(makeProxy(csvUrl), {
-        signal: withTimeout(7000),
-        headers: { Accept: 'text/plain,text/csv,*/*' },
-      });
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (!text || text.length < 20) continue;
-      return parseFredCsv(text, seriesId);
-    } catch {
-      // try next proxy
+async function getFredKey() {
+  try {
+    // Check localStorage first (user sets: localStorage.fredApiKey = 'yourkey')
+    const key = localStorage.getItem('fredApiKey');
+    if (key) return key;
+    
+    // Fallback .env (dev only)
+    if (typeof process !== 'undefined' && process.env.FRED_API_KEY) {
+      return process.env.FRED_API_KEY;
     }
-  }
-  throw new Error(`All proxies failed for FRED series ${seriesId}`);
+  } catch {}
+  return null;
 }
 
-function parseFredCsv(csvText, seriesId) {
-  const lines = csvText.trim().split('\n');
-  // Walk backwards; FRED uses "." for missing observations
-  for (let i = lines.length - 1; i >= 1; i--) {
-    const parts = lines[i].split(',');
-    if (parts.length < 2) continue;
-    const date = parts[0].trim();
-    const num = parseFloat(parts[1]);
-    if (!isNaN(num) && num > 0) {
-      return { value: num, date, seriesId };
-    }
+async function fetchFredObservation(seriesId) {
+  const apiKey = await getFredKey();
+  if (!apiKey) {
+    throw new Error('FRED API key required for live data. Set localStorage.fredApiKey or .env FRED_API_KEY');
   }
-  throw new Error(`No valid observations in FRED CSV for ${seriesId}`);
+
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${apiKey}&file_type=json&limit=1&sort_order=desc`;
+  
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json' },
+  });
+
+  if (!res.ok) {
+    throw new Error(`FRED API error: ${res.status}`);
+  }
+
+  const { observations } = await res.json();
+  const latest = observations[0];
+  if (!latest?.value || latest.value === '.') {
+    throw new Error('No recent data available');
+  }
+
+  return {
+    value: parseFloat(latest.value),
+    date: latest.date,
+    seriesId,
+    live: true,
+  };
 }
 
-export async function fetchLiveRates() {
-  // Return cached data if still fresh
+export async function fetchLiveRates({ forceRefresh = false } = {}) {
+  // Cache check
   try {
     const raw = localStorage.getItem(CACHE_KEY);
-    if (raw) {
+    if (raw && !forceRefresh) {
       const { data, timestamp } = JSON.parse(raw);
       if (Date.now() - timestamp < CACHE_TTL_MS) {
         return { ...data, fromCache: true };
       }
     }
-  } catch {
-    // corrupt cache — ignore and re-fetch
-  }
-
-  // Fetch both series concurrently
-  const [prime, creditCard] = await Promise.all([
-    fetchFredCsv('PRIME'),
-    fetchFredCsv('TERMCBCCALLNS'),
-  ]);
-
-  const data = {
-    prime: { ...prime, live: true },
-    creditCard: { ...creditCard, live: true },
-    fetchedAt: new Date().toISOString(),
-    live: true,
-  };
+  } catch {}
 
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch {
-    // storage quota — non-fatal
-  }
+    // Try live API
+    const [prime, creditCard] = await Promise.all([
+      fetchFredObservation('PRIME'),
+      fetchFredObservation('TERMCBCCALLNS'),
+    ]);
 
-  return data;
+    const data = {
+      prime,
+      creditCard,
+      fetchedAt: new Date().toISOString(),
+      live: true,
+    };
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    return data;
+  } catch (error) {
+    console.warn('Live FRED fetch failed:', error.message);
+    // Fallback static
+    const data = STATIC_RATES;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    return data;
+  }
 }
+

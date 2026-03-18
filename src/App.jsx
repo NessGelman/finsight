@@ -56,7 +56,7 @@ const DEFAULT_INPUTS = {
   desiredMonthlyPayment: 3000,
 };
 
-const INPUTS_STORAGE_KEY = 'finsight:inputs:v2';
+const INPUTS_STORAGE_KEY = 'finsight-v1-inputs';
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -184,9 +184,27 @@ export default function App() {
     try {
       window.localStorage.setItem(INPUTS_STORAGE_KEY, JSON.stringify(inputs));
     } catch {
-      // Ignore storage failures (private mode/quota).
+      // Ignore storage quota/private mode
     }
   }, [inputs]);
+
+  // Cleanup storage on unload (privacy/security)
+  useEffect(() => {
+    const clearStorage = () => {
+      try {
+        window.localStorage.removeItem(INPUTS_STORAGE_KEY);
+        window.localStorage.removeItem('finsight-v1-rates');
+      } catch {
+        // Ignore
+      }
+    };
+    window.addEventListener('beforeunload', clearStorage);
+    window.addEventListener('pagehide', clearStorage);
+    return () => {
+      window.removeEventListener('beforeunload', clearStorage);
+      window.removeEventListener('pagehide', clearStorage);
+    };
+  }, []);
 
   useEffect(() => {
     let timeoutId = null;

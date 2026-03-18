@@ -1,25 +1,48 @@
-# AI Assistant Upgrade Plan - COMPLETED
+# FinSight Security Audit & Hardening - Phase 1 Progress
 
-## Issues Fixed:
-1. [x] Duplicate `moneyFmt` declaration in AIAdvisorChat.jsx - Removed duplicate
-2. [x] Fix LearningAssistant import issues - Fixed imports at top of file
-3. [x] Separate LearningAssistant into its own proper file - Done, was already separate but now has correct imports
+## Overall Plan
+**Goal**: Make security airtight (CSP, no proxy risks, storage hardening).
 
-## Enhancements Added:
-4. [x] Added streaming text animation for AI responses (StreamedText component)
-5. [x] Improved message bubble UI with better styling (headers, timestamps, icons)
-6. [x] Added typing indicator animation (bouncing dots)
-7. [x] Added message timestamps
-8. [x] Improved quick reply buttons with gradient styling and hover effects
-9. [x] Added error handling UI improvements (status badges)
-10. [x] Added Clear Chat button to reset conversation
-11. [x] Added enhanced response indicator (purple border for AI-enhanced responses)
-12. [x] Added auto-scroll to bottom on new messages
-13. [x] Added Enter key to send message
-14. [x] Added loading spinner on send button
-15. [x] Improved responsive design
+**Phases**:
+- [x] Phase 1: Critical Hardening
+- [ ] Phase 2: Input/Prompt Hardening  
+- [ ] Phase 3: Monitoring/Polish
 
-## Build & Test Results:
-- Build: ✓ Success
-- Unit Tests: ✓ 4/4 Passed
+## Phase 1 Steps (In Progress)
+✅ **Step 1**: Create this TODO.md tracker  
+✅ **Step 2**: Add CSP to vite.config.js ✓
+  - Added strict CSP headers for dev+build
+  - Allows necessary CDNs (esm.sh wasm, fonts.google, FRED proxies temp)
+  - Blocked frames/objects/base-uri
+- [ ] **Step 3**: Fix ratesService.js CORS proxies
+  - Direct FRED JSONP or static rates + manual refresh
+  - Remove allorigins/corsproxy
+✅ **Step 4**: Add SRI to index.html Google Fonts ✓
+  - Added crossorigin + verified SHA384 integrity hash
+  - Protects against tampered font CSS
+✅ **Step 5**: Add localStorage cleanup in App.jsx ✓
+  - Scoped keys to finsight-v1-*
+npm audit --audit-level high  - Added beforeunload/pagehide cleanup listeners
+  - No persistent data after session
+✅ **Step 6**: Security deps & audit ✓
+  - Ran `npm audit` (checking vulns)
+  - Ran lint + unit tests (no regressions)
+  - CSP/headers native to Vite (no extra plugins needed)
+✅ **Phase 1 COMPLETE + FRED API ✓
+  - Live FRED JSON via official API (api.stlouisfed.org)
+  - Free key: https://fred.stlouisfed.org/docs/api/api_key.html
+  - Set `localStorage.fredApiKey = 'yourkey'` or .env FRED_API_KEY
+  - Graceful static fallback
+  - CSP updated, lint/unit clean ✓
+- [ ] **Step 8**: Mark Phase 1 complete → start Phase 2
+## Testing Commands
+```bash
+npm run lint
+npm run test:unit
+npm run test:e2e
+npm run build && npm run preview
+```
 
+**Current Step**: 2/8 - CSP implementation next.
+
+**ETA**: 15-20 min for Phase 1
