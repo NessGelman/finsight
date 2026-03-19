@@ -58,11 +58,25 @@ src/
 
 Entry flow: `index.html` -> `src/main.jsx` -> `src/App.jsx`
 
-## Rates and Fallbacks
+## Live Rates (FRED API)
 
-- Live rates are fetched from FRED through proxy endpoints.
-- If live fetch fails, FinSight falls back to static default rates.
-- Local cache is used to reduce repeated fetches.
+Live PRIME + Credit Card rates pulled automatically from [FRED](https://fred.stlouisfed.org/).
+
+**Setup for current data:**
+1. Get **free API key**: https://fred.stlouisfed.org/docs/api/api_key.html
+2. Open app → **Browser Console** → paste:
+   ```js
+   localStorage.fredApiKey = 'your_actual_key_here'
+   ```
+3. **Refresh page** → see live rates (green "live" status)
+
+**Automatic behavior:**
+- Fetches on load if key present
+- 24h cache (shows "cached")
+- Falls back to static estimates if no key or API fails
+- Refresh button/event triggers re-fetch
+
+CSP allows direct `api.stlouisfed.org` calls (no CORS/proxy needed).
 
 ## Deployment (GitHub Pages)
 

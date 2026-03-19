@@ -298,26 +298,37 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
 
           <div className="sidebar-section-label">Data</div>
 
-          <InputGroup data-accent="indigo" label="FRED API Key (Live Rates)" tooltip="Free key from https://fred.stlouisfed.org/docs/api/api_key.html enables real-time Prime &amp; Credit rates.">
-            <div className="api-key-input-wrap">
+          <InputGroup data-accent="indigo" label="FRED API Key (Live Rates)" tooltip="Free key from https://fred.stlouisfed.org/docs/api/api_key.html enables real-time PRIME + credit card rates. No key = static fallback.">
+            <SliderWithText
+              min={0}
+              max={100}
+              step={1}
+              value={displayKey ? 1 : 0}
+              onChange={() => {}} // dummy slider, disabled
+              formatDisplay={() => maskedKey || 'Enter key...'}
+              parseInput={() => null}
+              inputPrefix=""
+            />
+            <div className="api-key-controls" style={{display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px'}}>
               <input
                 type="password"
-                className="api-key-input"
+                className="slider-text-input api-key-input"
                 value={maskedKey}
                 onChange={handleKeyChange}
-                placeholder="Enter FRED API key"
-                title="Key saved to localStorage.fredApiKey"
+                placeholder="xxxx..."
+                style={{fontFamily: 'var(--font-mono)', textAlign: 'left !important'}}
               />
               <button
                 type="button"
                 className="refresh-btn"
                 onClick={handleRefreshRates}
-                title="Refresh live rates"
+                style={{minWidth: '32px', height: '32px'}}
               >
                 ↻
               </button>
             </div>
-            {displayKey && <span className="input-sub">Configured ({displayKey.length} chars) — Rates: live when available</span>}
+            {displayKey && <span className="input-sub">✓ Active ({displayKey.length} chars) — Rates refresh automatically</span>}
+            {!displayKey && <span className="input-sub" style={{color: 'var(--accent-amber)'}}>Static rates — enter key for live data</span>}
           </InputGroup>
         </div>
       ) : (
