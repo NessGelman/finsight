@@ -602,13 +602,24 @@ section {
   box-shadow: 0 0 0 3px var(--accent-dim), inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.api-key-controls .slider-text-input {
-  text-align: left !important;
-  flex: 1;
+.api-key-row .slider-text-input {
+  font-family: var(--font-mono);
+  text-align: left;
+  letter-spacing: 0.02em;
 }
 
-.api-key-input {
-  min-height: 32px;
+.api-key-row .slider-text-suffix {
+  cursor: pointer;
+  padding-right: 4px;
+  opacity: 0.7;
+  font-size: 12px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.api-key-row .slider-text-suffix:hover {
+  opacity: 1;
+  color: var(--accent-green);
 }
 
 .slider-text-prefix,

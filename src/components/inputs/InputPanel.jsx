@@ -299,33 +299,27 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
           <div className="sidebar-section-label">Data</div>
 
           <InputGroup data-accent="indigo" label="FRED API Key (Live Rates)" tooltip="Free key from https://fred.stlouisfed.org/docs/api/api_key.html enables real-time PRIME + credit card rates. No key = static fallback.">
-            <SliderWithText
-              min={0}
-              max={100}
-              step={1}
-              value={displayKey ? 1 : 0}
-              onChange={() => {}} // dummy slider, disabled
-              formatDisplay={() => maskedKey || 'Enter key...'}
-              parseInput={() => null}
-              inputPrefix=""
-            />
-            <div className="api-key-controls" style={{display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px'}}>
+            <div className="slider-text-pair api-key-row">
+              <div className="slider-text-input-wrap">
+                <input
+                  type="password"
+                  className="slider-text-input"
+                  value={maskedKey}
+                  onChange={handleKeyChange}
+                  placeholder="Enter FRED API key..."
+                />
+                <span className="slider-text-suffix">↻</span>
+              </div>
               <input
-                type="password"
-                className="slider-text-input api-key-input"
-                value={maskedKey}
-                onChange={handleKeyChange}
-                placeholder="xxxx..."
-                style={{fontFamily: 'var(--font-mono)', textAlign: 'left !important'}}
+                type="range" 
+                min={0}
+                max={1}
+                step={1}
+                value={displayKey ? 1 : 0}
+                onChange={handleRefreshRates}
+                style={{cursor: 'pointer'}}
+                title="Click to refresh rates"
               />
-              <button
-                type="button"
-                className="refresh-btn"
-                onClick={handleRefreshRates}
-                style={{minWidth: '32px', height: '32px'}}
-              >
-                ↻
-              </button>
             </div>
             {displayKey && <span className="input-sub">✓ Active ({displayKey.length} chars) — Rates refresh automatically</span>}
             {!displayKey && <span className="input-sub" style={{color: 'var(--accent-amber)'}}>Static rates — enter key for live data</span>}
