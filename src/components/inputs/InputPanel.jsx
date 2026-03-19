@@ -296,23 +296,22 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
             </div>
           </InputGroup>
 
-          <div className="sidebar-section-label">Data</div>
+          <div className="sidebar-section-label">**Live Rates**</div>
 
-          <InputGroup data-accent="indigo" label="FRED API Key (Live Rates)" tooltip="Free key from https://fred.stlouisfed.org/docs/api/api_key.html enables real-time PRIME + credit card rates. No key = static fallback.">
-            <div className="slider-text-pair api-key-row">
-              <div className="slider-text-input-wrap">
-                <input
-                  type="password"
-                  className="slider-text-input"
-                  value={maskedKey}
-                  onChange={handleKeyChange}
-                  placeholder="Enter FRED API key..."
-                />
-                <button type="button" className="refresh-btn-small" onClick={handleRefreshRates} title="Refresh rates">↻</button>
-              </div>
+          <InputGroup data-accent="indigo" label="FRED API Key" tooltip="Free from https://fred.stlouisfed.org/docs/api/api_key.html. Enter → live PRIME/CC rates. No key = static fallback.">
+            <div className="fred-input-row">
+              <input
+                type="password"
+                className="slider-text-input fred-key-input"
+                value={maskedKey}
+                onChange={handleKeyChange}
+                placeholder="xxxx...xxxx"
+                title="Key auto-saves. Click ↻ to refresh rates."
+              />
+              <button type="button" className="refresh-btn-small" onClick={handleRefreshRates}>↻</button>
             </div>
-            {displayKey && <span className="input-sub">✓ Active ({displayKey.length} chars) — Rates refresh automatically</span>}
-            {!displayKey && <span className="input-sub" style={{color: 'var(--accent-amber)'}}>Static rates — enter key for live data</span>}
+            {displayKey && <span className="input-sub text-success">✓ Live rates enabled ({displayKey.length} chars)</span>}
+            {!displayKey && <span className="input-sub text-warning">Static rates — enter FRED key for live data</span>}
           </InputGroup>
         </div>
       ) : (
