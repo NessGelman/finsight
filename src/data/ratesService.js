@@ -19,10 +19,12 @@ async function getFredKey() {
     if (key) return key;
     
     // Fallback .env (dev only)
-    if (typeof process !== 'undefined' && process.env.FRED_API_KEY) {
+    if (typeof process !== 'undefined' && process.env?.FRED_API_KEY) {
       return process.env.FRED_API_KEY;
     }
-  } catch {}
+  } catch {
+    // Silently ignore env access issues
+  }
   return null;
 }
 
@@ -66,7 +68,9 @@ export async function fetchLiveRates({ forceRefresh = false } = {}) {
         return { ...data, fromCache: true };
       }
     }
-  } catch {}
+  } catch {
+    // Ignore cache read errors
+  }
 
   try {
     // Try live API
