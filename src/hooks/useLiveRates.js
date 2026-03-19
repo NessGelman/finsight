@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchLiveRates, FALLBACK_RATES } from '../data/ratesService';
+import { fetchLiveRates, STATIC_RATES } from '../data/ratesService';
 
 /**
  * Fetches live rate data from FRED on mount.
@@ -26,8 +26,8 @@ export function useLiveRates() {
         .catch(() => {
           if (cancelled) return;
           setRates({
-            prime: FALLBACK_RATES.prime,
-            creditCard: FALLBACK_RATES.creditCard,
+            prime: STATIC_RATES.prime,
+            creditCard: STATIC_RATES.creditCard,
             live: false,
           });
           setStatus('fallback');

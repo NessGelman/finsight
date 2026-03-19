@@ -5,7 +5,9 @@ import { InputPanel } from './components/inputs/InputPanel';
 import { SummaryBar } from './components/dashboard/SummaryBar';
 import { FilterBar } from './components/dashboard/FilterBar';
 import { matchesFilter } from './components/dashboard/filterUtils';
-import { TradeoffChart } from './components/dashboard/TradeoffChart';
+const TradeoffChart = lazy(() =>
+  import('./components/dashboard/TradeoffChart').then((m) => ({ default: m.TradeoffChart })),
+);
 import { ComparisonTable } from './components/dashboard/ComparisonTable';
 import { useFinancingResults } from './hooks/useFinancingResults';
 import { useLiveRates } from './hooks/useLiveRates';

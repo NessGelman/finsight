@@ -147,3 +147,25 @@ export function parseShareParams() {
     collateral: COLLATERAL_LEVELS.has(parsedCollateral) ? parsedCollateral : 'none',
   };
 }
+
+export function exportChatHistory(messages) {
+  const chatContent = messages.map(m => {
+    const role = m.role === 'assistant' ? 'AI Advisor' : 'You';
+    const time = new Date(m.timestamp).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    return `[${time}] ${role}:\n${m.content}`;
+  }).join('\n\n');
+
+  const blob = new Blob([chatContent], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finsight-chat-${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

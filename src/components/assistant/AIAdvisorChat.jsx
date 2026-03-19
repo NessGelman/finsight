@@ -6,6 +6,7 @@ import {
   isAcceptableRewrite,
   summarizeConversationState,
 } from './aiAdvisorLogic';
+import { exportChatHistory } from '../../utils/exportHelpers';
 
 const moneyFmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -177,10 +178,28 @@ export function AIAdvisorChat({ contextData }) {
   const [generating, setGenerating] = useState(false);
   const [typingCopy, setTypingCopy] = useState('');
   const [modelError, setModelError] = useState('');
-  const [advisorPrefs, setAdvisorPrefs] = useState({
-    styleMode: 'hybrid',
-    qualityMode: 'balanced',
+  const [advisorPrefs, setAdvisorPrefs] = useState(() => {
+    try {
+      const storedPrefs = window.localStorage.getItem('finsight.advisorPrefs');
+      if (storedPrefs) {
+        return JSON.parse(storedPrefs);
+      }
+    } catch (e) {
+      console.error('Failed to parse advisor prefs from localStorage', e);
+    }
+    return {
+      styleMode: 'hybrid',
+      qualityMode: 'balanced',
+    };
   });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('finsight.advisorPrefs', JSON.stringify(advisorPrefs));
+    } catch (e) {
+      console.error('Failed to save advisor prefs to localStorage', e);
+    }
+  }, [advisorPrefs]);
 
   const context = useMemo(() => trimContext(contextData), [contextData]);
   const quickReplies = useMemo(() => getQuickReplies(advisorPrefs.styleMode), [advisorPrefs.styleMode]);
@@ -405,6 +424,14 @@ export function AIAdvisorChat({ contextData }) {
           </select>
         </div>
         <div className="clear-chat-cell">
+          <button
+            type="button"
+            className="clear-chat-btn"
+            onClick={() => exportChatHistory(messages)}
+            title="Export chat history"
+          >
+            Export Chat
+          </button>
           <button
             type="button"
             className="clear-chat-btn"

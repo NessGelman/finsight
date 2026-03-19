@@ -1,20 +1,20 @@
 /* ─── Design tokens — aligned with FinSight legacy UI ─────────────────────── */
 :root {
-  --bg-base: #041325;
-  --bg-panel: #020d1d;
-  --bg-surface: #061a33;
-  --bg-elevated: #0a2343;
-  --bg-hover: #113157;
+  --bg-base: #0A192F;
+  --bg-panel: #0E1F3A;
+  --bg-surface: #122647;
+  --bg-elevated: #1A3055;
+  --bg-hover: #223D6C;
 
   --border-subtle: #0f2a4a;
   --border-default: #1a3f67;
   --border-accent: #2a5d8f;
 
-  --text-primary: #e4eef9;
-  --text-secondary: #a7bdd5;
-  --text-muted: #7d98b8;
+  --text-primary: #E6F1FF;
+  --text-secondary: #A8B2D1;
+  --text-muted: #8892B0;
 
-  --accent: #2dc8ff;
+  --accent: #5A95FF;
   --accent-dim: rgba(45, 200, 255, 0.11);
   --accent-light: rgba(45, 200, 255, 0.26);
   --accent-green: #30df84;
@@ -35,15 +35,15 @@
   --radius-md: 8px;
   --radius-lg: 10px;
 
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
 
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--text-primary);
   background-color: var(--bg-panel);
   transition: background-color 0.3s ease, color 0.3s ease;
