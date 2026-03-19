@@ -308,18 +308,8 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
                   onChange={handleKeyChange}
                   placeholder="Enter FRED API key..."
                 />
-                <span className="slider-text-suffix">↻</span>
+                <span className="slider-text-suffix" onClick={handleRefreshRates} title="Refresh rates">↻</span>
               </div>
-              <input
-                type="range" 
-                min={0}
-                max={1}
-                step={1}
-                value={displayKey ? 1 : 0}
-                onChange={handleRefreshRates}
-                style={{cursor: 'pointer'}}
-                title="Click to refresh rates"
-              />
             </div>
             {displayKey && <span className="input-sub">✓ Active ({displayKey.length} chars) — Rates refresh automatically</span>}
             {!displayKey && <span className="input-sub" style={{color: 'var(--accent-amber)'}}>Static rates — enter key for live data</span>}
