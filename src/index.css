@@ -617,8 +617,21 @@ section {
   user-select: none;
 }
 
-.api-key-row .slider-text-suffix:hover {
-  opacity: 1;
+.refresh-btn-small {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.refresh-btn-small:hover {
+  border-color: var(--accent-green);
   color: var(--accent-green);
 }
 

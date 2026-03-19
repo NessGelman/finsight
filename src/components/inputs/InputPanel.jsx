@@ -308,7 +308,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
                   onChange={handleKeyChange}
                   placeholder="Enter FRED API key..."
                 />
-                <span className="slider-text-suffix" onClick={handleRefreshRates} title="Refresh rates">↻</span>
+                <button type="button" className="refresh-btn-small" onClick={handleRefreshRates} title="Refresh rates">↻</button>
               </div>
             </div>
             {displayKey && <span className="input-sub">✓ Active ({displayKey.length} chars) — Rates refresh automatically</span>}
