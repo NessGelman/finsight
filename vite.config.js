@@ -9,7 +9,7 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': [
         "default-src 'self';",
-        "script-src 'self' 'wasm-unsafe-eval' https://esm.sh https://*.esm.sh https://unpkg.com;",
+        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://esm.sh https://*.esm.sh https://unpkg.com;",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
         "font-src https://fonts.gstatic.com https://fonts.googleapis.com data:;",
         "img-src 'self' data: https://vitejs.dev;",
