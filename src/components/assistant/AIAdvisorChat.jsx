@@ -92,6 +92,14 @@ function buildRewritePrompt({
   memorySummary,
   recentTurns,
 }) {
+  const inputSummary = [
+    context?.inputs?.principal ? `amount ${moneyFmt.format(context.inputs.principal)}` : null,
+    context?.inputs?.annualRevenue ? `revenue ${moneyFmt.format(context.inputs.annualRevenue)}/yr` : null,
+    context?.inputs?.creditScore ? `credit score ${context.inputs.creditScore}` : null,
+    context?.inputs?.loanPurpose ? `purpose ${context.inputs.loanPurpose}` : null,
+    context?.inputs?.industry ? `industry ${context.inputs.industry}` : null,
+  ].filter(Boolean).join(', ') || 'unspecified inputs';
+
   const top = [...context.results]
     .sort((a, b) => a.totalCost - b.totalCost)
     .slice(0, 2)
@@ -105,6 +113,7 @@ function buildRewritePrompt({
 
 STYLE_MODE: ${styleMode}
 QUESTION: ${question}
+USER_INPUTS: ${inputSummary}
 MEMORY_SUMMARY: ${memorySummary}
 TOP_OPTIONS: ${top}
 MARKET_RATE_FEED: ${context.ratesStatus}
