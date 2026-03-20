@@ -208,7 +208,7 @@ export function AIAdvisorChat({ contextData }) {
       console.error('Failed to parse advisor prefs from localStorage', e);
     }
     return {
-      styleMode: 'hybrid',
+      styleMode: 'concise',
       qualityMode: 'balanced',
     };
   });

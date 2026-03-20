@@ -19,6 +19,16 @@ function fmtMonths(val) {
   return Number.isInteger(years) ? `${years} years` : `${years.toFixed(1)} years`;
 }
 
+function fmtInputs(inputs = {}) {
+  const parts = [];
+  if (inputs.principal) parts.push(`amount ${fmtMoney(inputs.principal)}`);
+  if (inputs.annualRevenue) parts.push(`revenue ${fmtMoney(inputs.annualRevenue)}/yr`);
+  if (inputs.creditScore) parts.push(`credit score ${inputs.creditScore}`);
+  if (inputs.loanPurpose) parts.push(`purpose ${inputs.loanPurpose}`);
+  if (inputs.industry) parts.push(`industry ${inputs.industry}`);
+  return parts.join(', ') || 'unspecified inputs';
+}
+
 function normalizeMode(styleMode) {
   if (styleMode === 'concise' || styleMode === 'detailed') return styleMode;
   return 'hybrid';
@@ -129,6 +139,7 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
   const wantsSchedule = /\b(schedule|amort|term|months?)\b/i.test(q);
   const isAffirmative = /\b(yes|yep|yeah|yup|sure|ok|okay|continue|go ahead)\b/i.test(q);
   const wantsMitigation = /\b(mitigate|mitigation|risks?|hedge|reduce risk|de[-\s]?risk|protect)\b/i.test(q);
+  const wantsLong = /\b(long(er)?|detailed|deep dive|more detail)\b/i.test(q);
 
   const lastAssistantText = (context?.recentAssistant ?? '').toLowerCase?.() || '';
   const mitigationFollowUp = isAffirmative && /mitigation|risk/.test(lastAssistantText);
@@ -232,7 +243,7 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
 
   if (wantsExplain || wantsCost) {
     return buildStyleTemplate(
-      styleMode,
+      wantsLong ? 'detailed' : styleMode,
       `${cheapest.label} is your current best baseline on total cost.`,
       `${cheapest.label} is ${fmtMoney(cheapest.totalCost)} total (${fmtMoney(cheapest.monthlyPayment)}/mo, SAC ${fmtPct(cheapest.sac)}, EAC ${fmtPct(cheapest.eac)}).` +
         (next ? ` Next best is ${next.label} at ${fmtMoney(next.totalCost)} total.` : ''),
@@ -243,10 +254,14 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
   // Catch-all: always acknowledge the user's phrasing and anchor to current numbers
   if (q.length) {
     const subject = q.slice(0, 140);
+    const inputSummary = fmtInputs(context.inputs);
+    const topLine = `${cheapest.label}: ${fmtMoney(cheapest.totalCost)} total, ${fmtMoney(cheapest.monthlyPayment)}/mo`;
+    const compareLine = next ? `; Next: ${next.label} at ${fmtMoney(next.totalCost)} total` : '';
+    const style = wantsLong ? 'detailed' : styleMode;
     return buildStyleTemplate(
-      styleMode,
-      `You asked: "${subject}". Based on your numbers, ${cheapest.label} is still the anchor recommendation.`,
-      `${cheapest.label}: ${fmtMoney(cheapest.totalCost)} total, ${fmtMoney(cheapest.monthlyPayment)}/mo, approval ~${Math.round(cheapest.likelihood)}%. Next best monthly is ${lowestMonthly.label} at ${fmtMoney(lowestMonthly.monthlyPayment)}/mo.`,
+      style,
+      `You asked: "${subject}". Based on your inputs (${inputSummary}), ${cheapest.label} is still the anchor recommendation.`,
+      `${topLine}${compareLine}. Approval ~${Math.round(cheapest.likelihood)}%. Lowest monthly is ${lowestMonthly.label} at ${fmtMoney(lowestMonthly.monthlyPayment)}/mo.`,
       `Want a mitigation plan for ${cheapest.label} or compare against ${lowestMonthly.label}?`,
     );
   }
