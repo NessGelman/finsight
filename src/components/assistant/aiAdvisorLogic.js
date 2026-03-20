@@ -127,6 +127,7 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
   const wantsMonthly = /\b(monthly|payment|cashflow|cash flow|afford)\b/i.test(q);
   const wantsApproval = /\b(approval|approve|eligib|likelihood|chance|odds)\b/i.test(q);
   const wantsSchedule = /\b(schedule|amort|term|months?)\b/i.test(q);
+  const isAffirmative = /\b(yes|yep|yeah|yup|sure|ok|okay|continue|go ahead)\b/i.test(q);
 
   if (!cheapest) {
     return buildStyleTemplate(
@@ -166,6 +167,22 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
       `Average outflow is ${fmtMoney(focus.monthlyPayment)}/mo and total payback is ${fmtMoney(focus.totalCost)}.` +
         (s ? ` Early schedule starts near ${fmtMoney(s.firstPayment)} and ends near ${fmtMoney(s.finalPayment)}.` : ''),
       `Show ${focus.label} vs ${next ? next.label : lowestMonthly.label} over year one?`,
+    );
+  }
+
+  if (isAffirmative) {
+    const focus = context?.selectedProductDetail
+      ? results.find((r) => r.id === context.selectedProductDetail.id) ?? cheapest
+      : cheapest;
+    const risks = (focus?.eligibilityWarnings ?? []).slice(0, 3);
+    const riskLine = risks.length
+      ? risks.join('; ')
+      : 'Watch cashflow strain if revenue dips and confirm covenant/usage fees.';
+    return buildStyleTemplate(
+      styleMode,
+      `${focus?.label ?? 'The top option'} stays in the lead. Biggest risks: ${riskLine}`,
+      `${focus?.label ?? 'This option'} costs ${fmtMoney(focus?.totalCost)} total and ${fmtMoney(focus?.monthlyPayment)}/mo. Approval profile is ${focus?.likelihood ? Math.round(focus.likelihood) + '%' : 'not scored'}.`,
+      `Want mitigation steps or compare vs ${lowestMonthly?.label ?? 'next option'}?`,
     );
   }
 
