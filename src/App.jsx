@@ -192,6 +192,28 @@ export default function App() {
     }
   }, [inputs]);
 
+  // Idle preload heavy lazy modules to speed tab switches without altering UI.
+  useEffect(() => {
+    const preload = () => {
+      import('./components/dashboard/TradeoffChart');
+      import('./components/dashboard/CostBreakdown');
+      import('./components/dashboard/AffordabilityTool');
+      import('./components/dashboard/ScenarioAnalysis');
+      import('./components/dashboard/SensitivityChart');
+      import('./components/dashboard/FundingTimeline');
+      import('./components/dashboard/GlossaryView');
+      import('./components/dashboard/MethodologyPanel');
+      import('./components/assistant/LearningAssistant');
+      import('./components/assistant/AIAdvisorChat');
+    };
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(preload, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timeoutId = setTimeout(preload, 1500);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   // Cleanup storage on unload (privacy/security)
   useEffect(() => {
     const clearStorage = () => {
