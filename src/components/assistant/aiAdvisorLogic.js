@@ -240,6 +240,17 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
     );
   }
 
+  // Catch-all: always acknowledge the user's phrasing and anchor to current numbers
+  if (q.length) {
+    const subject = q.slice(0, 140);
+    return buildStyleTemplate(
+      styleMode,
+      `You asked: "${subject}". Based on your numbers, ${cheapest.label} is still the anchor recommendation.`,
+      `${cheapest.label}: ${fmtMoney(cheapest.totalCost)} total, ${fmtMoney(cheapest.monthlyPayment)}/mo, approval ~${Math.round(cheapest.likelihood)}%. Next best monthly is ${lowestMonthly.label} at ${fmtMoney(lowestMonthly.monthlyPayment)}/mo.`,
+      `Want a mitigation plan for ${cheapest.label} or compare against ${lowestMonthly.label}?`,
+    );
+  }
+
   return buildStyleTemplate(
     styleMode,
     `${cheapest.label} is still your strongest default recommendation.`,
