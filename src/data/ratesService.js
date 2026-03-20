@@ -4,7 +4,7 @@
  * No proxies - direct api.stlouisfed.org calls only.
  */
 
-const CACHE_KEY = 'finsight-v1-rates';
+const CACHE_KEY = 'finsight-v2-rates';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 export const STATIC_RATES = {
