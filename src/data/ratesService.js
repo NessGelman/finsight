@@ -8,7 +8,7 @@ const CACHE_KEY = 'finsight-v1-rates';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 export const STATIC_RATES = {
-  prime: { value: 7.5, date: '2024-Oct (static)', live: false },
+  prime: { value: 6.75, date: 'Pinned fallback', live: false },
   creditCard: { value: 21.47, date: 'Q3 2024 (static)', live: false },
 };
 
@@ -96,4 +96,3 @@ export async function fetchLiveRates({ forceRefresh = false } = {}) {
     return data;
   }
 }
-
