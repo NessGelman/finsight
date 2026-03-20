@@ -113,7 +113,12 @@ function buildStyleTemplate(styleMode, direct, why, followUp) {
     return `${direct}\n\nKey metrics: ${why}\n\nNext: ${followUp}`;
   }
   if (mode === 'detailed') {
-    return `Short answer: ${direct}\n\nWhy this fits your numbers:\n${why}\n\nSuggested next question: ${followUp}`;
+    return [
+      `Summary: ${direct}`,
+      `Why it fits your numbers: ${why}`,
+      `Details: This weighs total cost, monthly burden, approval likelihood, and any available schedule/risk notes. If you want an even longer brief, ask for a "deep dive".`,
+      `Suggested next question: ${followUp}`,
+    ].join('\n\n');
   }
   return `Here is the short take: ${direct}\n\nMetrics:\n- ${why}\n\nWant to continue? ${followUp}`;
 }
