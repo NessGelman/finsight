@@ -172,6 +172,16 @@ function StreamedText({ text, speed = 30 }) {
   return <span>{displayedText}{!isComplete && <span className="streaming-cursor">▊</span>}</span>;
 }
 
+function deriveFollowUp(messages) {
+  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+  if (!lastAssistant?.content) return null;
+  const text = String(lastAssistant.content);
+  const nextMatch = text.match(/(?:Next:|Suggested next question:)\s*([^.\n]+[.]?)/i);
+  if (nextMatch?.[1]) return nextMatch[1].trim();
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  return sentences[1]?.slice(0, 120) || sentences[0]?.slice(0, 120) || null;
+}
+
 export function AIAdvisorChat({ contextData }) {
   const modelLoadedRef = useRef(false);
   const messagesEndRef = useRef(null);
@@ -213,6 +223,7 @@ export function AIAdvisorChat({ contextData }) {
 
   const context = useMemo(() => trimContext(contextData), [contextData]);
   const quickReplies = useMemo(() => getQuickReplies(advisorPrefs.styleMode), [advisorPrefs.styleMode]);
+  const followUpSuggestion = useMemo(() => deriveFollowUp(messages), [messages]);
 
   const { summary: memorySummary, recentTurns } = useMemo(
     () => summarizeConversationState(messages, advisorPrefs, 10),
@@ -501,7 +512,7 @@ export function AIAdvisorChat({ contextData }) {
       )}
 
       <div className="ai-advisor-quick-replies">
-        {quickReplies.map((reply) => (
+        {[...quickReplies, followUpSuggestion].filter(Boolean).map((reply) => (
           <button
             type="button"
             key={reply}
