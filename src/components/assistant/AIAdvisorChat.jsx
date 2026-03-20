@@ -215,7 +215,7 @@ export function AIAdvisorChat({ contextData }) {
   const quickReplies = useMemo(() => getQuickReplies(advisorPrefs.styleMode), [advisorPrefs.styleMode]);
 
   const { summary: memorySummary, recentTurns } = useMemo(
-    () => summarizeConversationState(messages, advisorPrefs, 6),
+    () => summarizeConversationState(messages, advisorPrefs, 10),
     [messages, advisorPrefs],
   );
 

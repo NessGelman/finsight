@@ -29,7 +29,7 @@ export function findMentionedProducts(question, results) {
   return (results || []).filter((r) => q.includes(r.label.toLowerCase()) || q.includes(r.id.toLowerCase()));
 }
 
-export function summarizeConversationState(turns, prefs, maxRecent = 6) {
+export function summarizeConversationState(turns, prefs, maxRecent = 10) {
   const allTurns = Array.isArray(turns) ? turns : [];
   if (allTurns.length <= maxRecent) {
     return {
@@ -51,9 +51,11 @@ export function summarizeConversationState(turns, prefs, maxRecent = 6) {
 
   const styleMode = normalizeMode(prefs?.styleMode);
   const qualityMode = prefs?.qualityMode === 'fast' ? 'fast' : 'balanced';
+  const lastUser = recentTurns.slice().reverse().find((t) => t.role === 'user')?.content;
+  const lastAssistant = recentTurns.slice().reverse().find((t) => t.role === 'assistant')?.content;
 
   return {
-    summary: `User preference: ${styleMode} explanation style, ${qualityMode} quality mode. Earlier intent: ${intentHints.join(', ') || 'general guidance'}.`,
+    summary: `User preference: ${styleMode} style, ${qualityMode} quality. Earlier intent: ${intentHints.join(', ') || 'general guidance'}. Last user: ${lastUser ? String(lastUser).slice(0, 160) : 'n/a'}. Last advisor: ${lastAssistant ? String(lastAssistant).slice(0, 160) : 'n/a'}.`,
     recentTurns,
   };
 }
@@ -203,4 +205,3 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
     `For ${selectedLabel}, want the biggest risks and how to mitigate them?`,
   );
 }
-
