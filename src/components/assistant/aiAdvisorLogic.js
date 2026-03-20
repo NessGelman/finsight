@@ -128,6 +128,10 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
   const wantsApproval = /\b(approval|approve|eligib|likelihood|chance|odds)\b/i.test(q);
   const wantsSchedule = /\b(schedule|amort|term|months?)\b/i.test(q);
   const isAffirmative = /\b(yes|yep|yeah|yup|sure|ok|okay|continue|go ahead)\b/i.test(q);
+  const wantsMitigation = /\b(mitigate|mitigation|risks?|hedge|reduce risk|de[-\s]?risk|protect)\b/i.test(q);
+
+  const lastAssistantText = (context?.recentAssistant ?? '').toLowerCase?.() || '';
+  const mitigationFollowUp = isAffirmative && /mitigation|risk/.test(lastAssistantText);
 
   if (!cheapest) {
     return buildStyleTemplate(
@@ -167,6 +171,27 @@ export function buildDeterministicResponse(question, context, styleMode = 'hybri
       `Average outflow is ${fmtMoney(focus.monthlyPayment)}/mo and total payback is ${fmtMoney(focus.totalCost)}.` +
         (s ? ` Early schedule starts near ${fmtMoney(s.firstPayment)} and ends near ${fmtMoney(s.finalPayment)}.` : ''),
       `Show ${focus.label} vs ${next ? next.label : lowestMonthly.label} over year one?`,
+    );
+  }
+
+  if (wantsMitigation || mitigationFollowUp) {
+    const focus = context?.selectedProductDetail
+      ? results.find((r) => r.id === context.selectedProductDetail.id) ?? cheapest
+      : cheapest;
+    const risks = (focus?.eligibilityWarnings ?? []).slice(0, 3);
+    const riskLine = risks.length
+      ? risks.join('; ')
+      : 'Approval can tighten without collateral; watch covenant/usage fees and keep 2-3 months of payments reserved.';
+    const steps = [
+      'Line up secondary collateral or AR as backup if asked.',
+      'Keep utilization under 45% to avoid repricing.',
+      'Hold 2-3 months of payments in reserve for liquidity tests.',
+    ];
+    return buildStyleTemplate(
+      styleMode,
+      `${focus?.label ?? 'The top option'} remains viable. Key risks: ${riskLine}`,
+      `Mitigate by: ${steps.join(' • ')}.`,
+      `Compare against ${lowestMonthly?.label ?? 'the next option'} or ask for specific covenants to watch?`,
     );
   }
 
