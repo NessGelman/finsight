@@ -230,6 +230,20 @@ export function AIAdvisorChat({ contextData }) {
     [messages, advisorPrefs],
   );
 
+  const clearLastFive = () => {
+    setMessages((prev) => {
+      const trimmed = prev.slice(-5);
+      if (trimmed.length === 0) {
+        return [{
+          role: 'assistant',
+          content: 'I\'m ready. I can explain your options in plain language or detailed mode using your current numbers.',
+          timestamp: new Date().toISOString(),
+        }];
+      }
+      return trimmed;
+    });
+  };
+
   // Auto-scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -467,6 +481,14 @@ export function AIAdvisorChat({ contextData }) {
             title="Clear chat history"
           >
             Clear Chat
+          </button>
+          <button
+            type="button"
+            className="clear-chat-btn"
+            onClick={clearLastFive}
+            title="Clear last 5 turns"
+          >
+            Clear Last 5
           </button>
         </div>
       </div>
