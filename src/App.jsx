@@ -120,7 +120,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('compare');
   const [scheduleRow, setScheduleRow] = useState(null);
 
-  const { rates, status: ratesStatus } = useLiveRates();
+  const { rates, status: ratesStatus, error: ratesError, refresh: refreshRates } = useLiveRates();
 
   const updateInput = useCallback((key, value) => {
     setInputs((prev) => sanitizeInputs({ ...prev, [key]: value }));
@@ -245,6 +245,8 @@ export default function App() {
       <TopBar
         rates={rates}
         ratesStatus={ratesStatus}
+        ratesError={ratesError}
+        onRefreshRates={refreshRates}
         results={results}
         inputs={inputs}
         onReset={resetInputs}

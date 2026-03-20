@@ -12,26 +12,27 @@ import { fetchLiveRates, STATIC_RATES } from '../data/ratesService';
 export function useLiveRates() {
   const [rates, setRates] = useState(null);
   const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-
-    const fetchAndUpdate = () => {
-      fetchLiveRates()
-        .then((data) => {
-          if (cancelled) return;
-          setRates(data);
-          setStatus(data.fromCache ? 'cached' : 'live');
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setRates({
-            prime: STATIC_RATES.prime,
-            creditCard: STATIC_RATES.creditCard,
-            live: false,
-          });
-          setStatus('fallback');
+    const fetchAndUpdate = async () => {
+      setError(null);
+      try {
+        const data = await fetchLiveRates();
+        if (cancelled) return;
+        setRates(data);
+        setStatus(data.fromCache ? 'cached' : 'live');
+      } catch (err) {
+        if (cancelled) return;
+        setError(err?.message || 'Unable to reach FRED');
+        setRates({
+          prime: STATIC_RATES.prime,
+          creditCard: STATIC_RATES.creditCard,
+          live: false,
         });
+        setStatus('fallback');
+      }
     };
 
     fetchAndUpdate();
@@ -46,5 +47,7 @@ export function useLiveRates() {
     };
   }, []);
 
-  return { rates, status };
+  const refresh = () => window.dispatchEvent(new Event('refreshRates'));
+
+  return { rates, status, error, refresh };
 }

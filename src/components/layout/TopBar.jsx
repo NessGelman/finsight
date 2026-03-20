@@ -9,7 +9,7 @@ const TABS = [
   { id: 'assistant', label: 'Assistant' },
 ];
 
-export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab, onTabChange }) {
+export function TopBar({ rates, ratesStatus, ratesError, onRefreshRates, results, inputs, onReset, activeTab, onTabChange }) {
   return (
     <div className="top-bar">
       <div className="top-bar-logo">
@@ -53,10 +53,18 @@ export function TopBar({ rates, ratesStatus, results, inputs, onReset, activeTab
 
       <div className="top-bar-right-cluster" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'nowrap' }}>
         <div className="top-bar-rates">
-          <RatesStatus rates={rates} status={ratesStatus} compact />
+          <RatesStatus rates={rates} status={ratesStatus} error={ratesError} compact />
         </div>
 
         <div className="top-bar-actions" style={{ display: 'flex', gap: '6px' }}>
+          <button
+            type="button"
+            className="top-bar-btn"
+            onClick={onRefreshRates}
+            title="Refresh live rates"
+          >
+            ↻ Rates
+          </button>
           <button type="button" className="top-bar-btn" onClick={onReset} title="Reset inputs to defaults">
             Reset
           </button>

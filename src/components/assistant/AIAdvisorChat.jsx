@@ -166,6 +166,7 @@ function StreamedText({ text, speed = 30 }) {
 export function AIAdvisorChat({ contextData }) {
   const modelLoadedRef = useRef(false);
   const messagesEndRef = useRef(null);
+  const webgpuSupported = useMemo(() => typeof navigator !== 'undefined' && 'gpu' in navigator, []);
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -395,6 +396,9 @@ export function AIAdvisorChat({ contextData }) {
         </span>
         <span className="status-badge">
           Loaded: {modelLoadedRef.current ? '✓' : loadingModel ? '...' : '—'}
+        </span>
+        <span className="status-badge">
+          WebGPU: {webgpuSupported ? '✓' : 'Not available'}
         </span>
         {modelError && <span className="ai-advisor-error">Error: {modelError}</span>}
       </div>

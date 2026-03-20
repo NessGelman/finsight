@@ -3,6 +3,7 @@ const STATUS_LABELS = {
   live:     'Live rates',
   cached:   'Cached rates',
   fallback: 'Estimated rates',
+  error:    'Using estimates (live feed failed)',
 };
 
 function formatDate(dateStr) {
@@ -14,7 +15,7 @@ function formatDate(dateStr) {
   }
 }
 
-export function RatesStatus({ rates, status, compact }) {
+export function RatesStatus({ rates, status, compact, error }) {
   if (compact) {
     return (
       <div className="rates-status-compact">
@@ -27,6 +28,7 @@ export function RatesStatus({ rates, status, compact }) {
         ) : (
           <span className="rates-compact-text">{STATUS_LABELS[status] ?? '—'}</span>
         )}
+        {error && <span className="rates-compact-error" title={error}>!</span>}
       </div>
     );
   }
@@ -79,6 +81,12 @@ export function RatesStatus({ rates, status, compact }) {
         <span className="rates-sources-static">
           MCA &amp; factoring: IBISWorld industry estimates
         </span>
+        {error && (
+          <>
+            <span className="rates-sources-sep">·</span>
+            <span className="rates-error-text">Falling back to static rates: {error}</span>
+          </>
+        )}
       </div>
     </div>
   );
