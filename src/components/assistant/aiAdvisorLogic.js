@@ -55,7 +55,7 @@ export function summarizeConversationState(turns, prefs, maxRecent = 10) {
   const lastAssistant = recentTurns.slice().reverse().find((t) => t.role === 'assistant')?.content;
 
   return {
-    summary: `User preference: ${styleMode} style, ${qualityMode} quality. Earlier intent: ${intentHints.join(', ') || 'general guidance'}. Last user: ${lastUser ? String(lastUser).slice(0, 160) : 'n/a'}. Last advisor: ${lastAssistant ? String(lastAssistant).slice(0, 160) : 'n/a'}.`,
+    summary: `User preference: ${styleMode} explanation style, ${qualityMode} quality. Earlier intent: ${intentHints.join(', ') || 'general guidance'}. Last user: ${lastUser ? String(lastUser).slice(0, 160) : 'n/a'}. Last advisor: ${lastAssistant ? String(lastAssistant).slice(0, 160) : 'n/a'}.`,
     recentTurns,
   };
 }
