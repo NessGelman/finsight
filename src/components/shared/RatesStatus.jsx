@@ -54,17 +54,26 @@ export function RatesStatus({ rates, status, compact }) {
             )}
           </span>
         )}
+
+        {rates?.treasurySpread?.value !== undefined && (
+          <span className="rates-chip">
+            10Y-2Y Spread: <strong>{rates.treasurySpread.value.toFixed(2)}%</strong>
+            {formatDate(rates.treasurySpread.date) && (
+              <span className="rates-chip-date"> as of {formatDate(rates.treasurySpread.date)}</span>
+            )}
+          </span>
+        )}
       </div>
 
       <div className="rates-sources">
         <span className="rates-sources-label">Sources:</span>
         <a
-          href="https://fred.stlouisfed.org/series/PRIME"
+          href="https://fred.stlouisfed.org/series/DPRIME"
           target="_blank"
           rel="noopener noreferrer"
           className="rates-source-link"
         >
-          Fed Prime Rate (FRED/PRIME)
+          Fed Prime Rate (FRED/DPRIME)
         </a>
         <span className="rates-sources-sep">·</span>
         <a
@@ -74,6 +83,15 @@ export function RatesStatus({ rates, status, compact }) {
           className="rates-source-link"
         >
           Credit Card Survey (FRED/TERMCBCCALLNS)
+        </a>
+        <span className="rates-sources-sep">·</span>
+        <a
+          href="https://fred.stlouisfed.org/series/T10Y2Y"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rates-source-link"
+        >
+          Treasury Spread (FRED/T10Y2Y)
         </a>
         <span className="rates-sources-sep">·</span>
         <span className="rates-sources-static">
