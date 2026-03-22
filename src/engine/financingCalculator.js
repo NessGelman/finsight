@@ -46,7 +46,8 @@ function calcCreditCard(principal, apr, termMonths) {
 }
 
 function calcSBA(principal, apr, termMonths) {
-  // SBA guarantee fee based on loan amount
+  // SBA guarantee fee based on loan amount (SBA SOP 50 10 7.1, effective 10/1/2023)
+  // https://www.sba.gov/document/support-sba-standard-operating-procedures-sop
   const guaranteedPortion = principal * 0.75;
   let guaranteeFeeRate = 0.02;
   if (principal > 700000) guaranteeFeeRate = 0.0375;
@@ -325,7 +326,7 @@ function getApprovalOdds(id, { creditScore, businessAge, annualRevenue, principa
       break;
     case 'mca':
       score += 20; // MCA is easy to get
-      if (revenue < amount) score -= 50;
+      if (revenue < amount * 2) score -= 50; // MCA lenders typically require 2× annual revenue vs advance
       break;
     case 'lineOfCredit':
       if (cs < 680) score -= 30;

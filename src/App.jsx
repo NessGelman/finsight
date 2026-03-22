@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback, useMemo, useEffect } from 'react';
+import { lazy, Suspense, useState, useCallback, useMemo, useEffect, Component } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { TopBar } from './components/layout/TopBar';
 import { InputPanel } from './components/inputs/InputPanel';
@@ -46,6 +46,32 @@ const AIAdvisorChat = lazy(() =>
 const FreeAIChat = lazy(() =>
   import('./components/assistant/FreeAIChat').then((m) => ({ default: m.FreeAIChat })),
 );
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="section-loading" style={{ color: 'var(--color-danger, #ef4444)', padding: '2rem', textAlign: 'center' }}>
+          <strong>Something went wrong loading this section.</strong>
+          <br />
+          <small>{this.state.error.message}</small>
+          <br />
+          <button style={{ marginTop: '1rem' }} onClick={() => this.setState({ error: null })}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const DEFAULT_INPUTS = {
   principal: 100000,
@@ -168,7 +194,18 @@ export default function App() {
   }, [processedResults, activeFilter]);
 
   const sectionFallback = (
-    <div className="section-loading">Loading module...</div>
+    <div className="section-loading">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', padding: '2rem', color: 'var(--color-muted, #6b7280)' }}>
+        <div style={{ width: 18, height: 18, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+        Loading…
+      </div>
+    </div>
+  );
+
+  const SuspenseSection = ({ children }) => (
+    <ErrorBoundary>
+      <SuspenseSection>{children}</SuspenseSection>
+    </ErrorBoundary>
   );
 
   const aiAdvisorContext = useMemo(() => ({
@@ -350,9 +387,9 @@ export default function App() {
                 />
               </div>
               <div className="compare-bottom-grid">
-                <Suspense fallback={sectionFallback}>
+                <SuspenseSection>
                   <CostBreakdown results={results} />
-                </Suspense>
+                </SuspenseSection>
               </div>
             </div>
           </section>
@@ -360,49 +397,49 @@ export default function App() {
 
         {activeTab === 'optimize' && (
           <section id="optimize" className="section-block">
-            <Suspense fallback={sectionFallback}>
+            <SuspenseSection>
               <ScenarioAnalysis baseInputs={inputs} baseResults={results} liveRates={rates} />
-            </Suspense>
+            </SuspenseSection>
             <div className="optimize-bottom-grid">
-              <Suspense fallback={sectionFallback}>
+              <SuspenseSection>
                 <TradeoffChart results={results} selectedProduct={selectedProduct} onSelectProduct={setSelectedProduct} activeFilters={activeFilter !== 'all' ? [activeFilter] : []} />
                 <SensitivityChart inputs={inputs} liveRates={rates} />
                 <FundingTimeline results={results} />
-              </Suspense>
+              </SuspenseSection>
             </div>
           </section>
         )}
 
         {activeTab === 'learn' && (
           <section id="learn" className="section-block">
-            <Suspense fallback={sectionFallback}>
+            <SuspenseSection>
               <GlossaryView results={results} inputs={inputs} />
               <MethodologyPanel />
-            </Suspense>
+            </SuspenseSection>
           </section>
         )}
 
         {activeTab === 'assistant' && (
           <section id="assistant" className="section-block">
-            <Suspense fallback={sectionFallback}>
+            <SuspenseSection>
               <LearningAssistant results={results} inputs={inputs} />
-            </Suspense>
+            </SuspenseSection>
           </section>
         )}
 
         {activeTab === 'aiAdvisor' && (
           <section id="ai-advisor" className="section-block">
-            <Suspense fallback={sectionFallback}>
+            <SuspenseSection>
               <AIAdvisorChat contextData={aiAdvisorContext} />
-            </Suspense>
+            </SuspenseSection>
           </section>
         )}
 
         {activeTab === 'aiChat' && (
           <section id="ai-chat" className="section-block">
-            <Suspense fallback={sectionFallback}>
+            <SuspenseSection>
               <FreeAIChat results={results} inputs={inputs} rates={rates} />
-            </Suspense>
+            </SuspenseSection>
           </section>
         )}
       </main>

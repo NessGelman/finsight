@@ -40,7 +40,15 @@ async function fetchFredObservation(seriesId, apiKey) {
     `https://api.stlouisfed.org/fred/series/observations` +
     `?series_id=${seriesId}&api_key=${apiKey}&file_type=json&limit=1&sort_order=desc`;
 
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  let res;
+  try {
+    res = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     throw new Error(`FRED API error: ${res.status}`);
