@@ -4,7 +4,7 @@
  * CORS-enabled, works directly from the browser.
  */
 
-const POLLINATIONS_URL = 'https://text.pollinations.ai/';
+const POLLINATIONS_URL = 'https://text.pollinations.ai/openai';
 
 export async function askHuggingFace(userQuestion, calculationData, userInputs) {
   const { results } = calculationData;
@@ -53,7 +53,8 @@ Question: ${userQuestion}`;
     throw new Error(`Pollinations API error: ${response.status}`);
   }
 
-  const message = (await response.text()).trim();
+  const data = await response.json();
+  const message = data?.choices?.[0]?.message?.content?.trim();
   if (!message) throw new Error('Empty response from AI');
 
   return {
