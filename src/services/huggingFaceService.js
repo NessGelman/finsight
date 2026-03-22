@@ -27,7 +27,7 @@ ${topOptions
 Question: ${userQuestion}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
 
   let response;
   try {
@@ -40,14 +40,16 @@ Question: ${userQuestion}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        model: 'openai-fast',
-        private: true,
+        model: 'openai',
         seed: Math.floor(Math.random() * 10000),
       }),
     });
-  } finally {
+  } catch (err) {
     clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('Request timed out — Pollinations is slow, try again');
+    throw err;
   }
+  clearTimeout(timeout);
 
   if (!response.ok) {
     throw new Error(`Pollinations API error: ${response.status}`);
