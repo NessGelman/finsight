@@ -1,57 +1,64 @@
 /**
- * Hugging Face Inference API
- * FREE tier - no account or API key needed for public models.
- * https://huggingface.co/inference-api
+ * Pollinations AI — free text generation, no API key, no account needed.
+ * https://text.pollinations.ai/
+ * CORS-enabled, works directly from the browser.
  */
 
-const HF_API_URL =
-  'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2';
+const POLLINATIONS_URL = 'https://text.pollinations.ai/';
 
 export async function askHuggingFace(userQuestion, calculationData, userInputs) {
   const { results } = calculationData;
   const topOptions = (results || []).slice(0, 3);
 
-  const prompt = `<s>[INST] You are a concise business financing advisor.
+  const systemPrompt =
+    'You are a concise business financing advisor. Answer in 2-3 sentences using only the options provided. No generic advice.';
 
-User needs $${(userInputs.principal || 0).toLocaleString()} in financing.
+  const userPrompt = `I need $${(userInputs.principal || 0).toLocaleString()} in financing.
 Credit score: ${userInputs.creditScore}. Revenue: $${(userInputs.annualRevenue || 0).toLocaleString()}/yr.
 
-Top financing options:
-${topOptions.map((opt, idx) =>
-  `${idx + 1}. ${opt.label}: $${(opt.monthlyPayment || 0).toLocaleString()}/mo, ${(opt.apr || opt.eac || 0).toFixed(1)}% APR, ${opt.termMonths} months`
-).join('\n')}
+Top options:
+${topOptions
+  .map(
+    (opt, idx) =>
+      `${idx + 1}. ${opt.label}: $${(opt.monthlyPayment || 0).toLocaleString()}/mo, ${(opt.apr || opt.eac || 0).toFixed(1)}% APR, ${opt.termMonths} months`,
+  )
+  .join('\n')}
 
-Question: ${userQuestion}
+Question: ${userQuestion}`;
 
-Answer in 2-3 sentences about their specific options. [/INST]`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
-  const response = await fetch(HF_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 180,
-        temperature: 0.7,
-        return_full_text: false,
-      },
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(POLLINATIONS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        model: 'openai-fast',
+        private: true,
+        seed: Math.floor(Math.random() * 10000),
+      }),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
-    throw new Error(`Hugging Face API error: ${response.status}`);
+    throw new Error(`Pollinations API error: ${response.status}`);
   }
 
-  const data = await response.json();
-  // Model may still be loading on HF free tier
-  if (data.error) {
-    throw new Error(data.error);
-  }
+  const message = (await response.text()).trim();
+  if (!message) throw new Error('Empty response from AI');
 
-  const message = data[0]?.generated_text?.trim() || 'No response generated.';
   return {
     message,
-    source: 'huggingface',
-    model: 'Mistral-7B',
+    source: 'pollinations',
+    model: 'Pollinations (free)',
   };
 }

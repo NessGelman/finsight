@@ -43,8 +43,8 @@ export function getAIProviderInfo() {
       privacy: 'Excellent (100% local)',
     },
     huggingface: {
-      name: 'Hugging Face',
-      description: 'Cloud AI — Mistral-7B (free tier)',
+      name: 'Pollinations AI',
+      description: 'Cloud AI — free, no account needed',
       cost: 'FREE',
       privacy: 'Good (no account needed)',
     },
