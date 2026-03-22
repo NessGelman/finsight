@@ -24,6 +24,7 @@ export function RatesStatus({ rates, status, compact, error }) {
           <span className="rates-compact-text">
             Prime <strong>{rates.prime.value.toFixed(2)}%</strong>
             {rates?.creditCard?.value && ` · CC ${rates.creditCard.value.toFixed(1)}%`}
+            {rates?.treasurySpread?.value !== undefined && ` · Spread ${rates.treasurySpread.value.toFixed(2)}%`}
           </span>
         ) : (
           <span className="rates-compact-text">{STATUS_LABELS[status] ?? '—'}</span>
