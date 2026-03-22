@@ -5,7 +5,7 @@
  * No proxies - direct api.stlouisfed.org calls only.
  */
 
-const CACHE_KEY = 'finsight-v3-rates';
+const CACHE_KEY = 'finsight-v4-rates';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 // Free FRED API key injected at build time via VITE_FRED_API_KEY in .env
@@ -13,9 +13,9 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const DEFAULT_FRED_KEY = import.meta.env.VITE_FRED_API_KEY ?? '';
 
 export const STATIC_RATES = {
-  prime: { value: 7.50, date: '2025-03-01 (static)', live: false },
-  creditCard: { value: 21.47, date: 'Q1 2025 (static)', live: false },
-  treasurySpread: { value: 0.15, date: '2025-03-01 (static)', live: false },
+  prime: { value: 6.75, date: '2026-03-01 (static)', live: false },
+  creditCard: { value: 20.09, date: 'Q1 2026 (static)', live: false },
+  treasurySpread: { value: 0.32, date: '2026-03-01 (static)', live: false },
 };
 
 async function getFredKey() {
