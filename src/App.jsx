@@ -193,18 +193,18 @@ export default function App() {
     }));
   }, [processedResults, activeFilter]);
 
-  const sectionFallback = (
-    <div className="section-loading">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', padding: '2rem', color: 'var(--color-muted, #6b7280)' }}>
-        <div style={{ width: 18, height: 18, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-        Loading…
-      </div>
-    </div>
-  );
-
   const SuspenseSection = ({ children }) => (
     <ErrorBoundary>
-      <SuspenseSection>{children}</SuspenseSection>
+      <Suspense fallback={
+        <div className="section-loading">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', padding: '2rem', color: 'var(--color-muted, #6b7280)' }}>
+            <div style={{ width: 18, height: 18, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+            Loading…
+          </div>
+        </div>
+      }>
+        {children}
+      </Suspense>
     </ErrorBoundary>
   );
 
