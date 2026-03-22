@@ -8,9 +8,9 @@
 const CACHE_KEY = 'finsight-v3-rates';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-// Free FRED API key — 120 req/min, no billing ever.
+// Free FRED API key injected at build time via VITE_FRED_API_KEY in .env
 // Get your own at: https://fred.stlouisfed.org/docs/api/api_key.html
-const DEFAULT_FRED_KEY = '53b64709330b3347d70ad885040968f3';
+const DEFAULT_FRED_KEY = import.meta.env.VITE_FRED_API_KEY ?? '';
 
 export const STATIC_RATES = {
   prime: { value: 7.50, date: '2025-03-01 (static)', live: false },
