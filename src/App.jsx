@@ -43,6 +43,9 @@ const LearningAssistant = lazy(() =>
 const AIAdvisorChat = lazy(() =>
   import('./components/assistant/AIAdvisorChat').then((m) => ({ default: m.AIAdvisorChat })),
 );
+const FreeAIChat = lazy(() =>
+  import('./components/assistant/FreeAIChat').then((m) => ({ default: m.FreeAIChat })),
+);
 
 const DEFAULT_INPUTS = {
   principal: 100000,
@@ -393,6 +396,14 @@ export default function App() {
           <section id="ai-advisor" className="section-block">
             <Suspense fallback={sectionFallback}>
               <AIAdvisorChat contextData={aiAdvisorContext} />
+            </Suspense>
+          </section>
+        )}
+
+        {activeTab === 'aiChat' && (
+          <section id="ai-chat" className="section-block">
+            <Suspense fallback={sectionFallback}>
+              <FreeAIChat results={results} inputs={inputs} rates={rates} />
             </Suspense>
           </section>
         )}

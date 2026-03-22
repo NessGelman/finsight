@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchLiveRates, STATIC_RATES } from '../data/ratesService';
+import { fetchLiveRates, STATIC_RATES } from '../data/autoFredService';
 
 /**
  * Fetches live rate data from FRED on mount.
