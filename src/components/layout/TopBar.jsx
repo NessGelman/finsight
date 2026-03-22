@@ -6,7 +6,7 @@ const TABS = [
   { id: 'optimize', label: 'Optimize' },
   { id: 'learn', label: 'Learn' },
   { id: 'aiAdvisor', label: 'AI Advisor' },
-  { id: 'aiChat', label: 'AI Chat' },
+  { id: 'aiChat', label: 'Free AI' },
   { id: 'assistant', label: 'Assistant' },
 ];
 
