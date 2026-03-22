@@ -59,7 +59,6 @@ const DEFAULT_INPUTS = {
   employeeCount: 10,
   preferredTermMonths: 36,
   desiredMonthlyPayment: 3000,
-  fredApiKey: '',
 };
 
 const INPUTS_STORAGE_KEY = 'finsight-v1-inputs';
@@ -88,7 +87,6 @@ function sanitizeInputs(raw) {
     employeeCount: clamp(Number.isFinite(employeeCount) ? employeeCount : DEFAULT_INPUTS.employeeCount, 1, 500),
     preferredTermMonths: clamp(Number.isFinite(preferredTermMonths) ? preferredTermMonths : DEFAULT_INPUTS.preferredTermMonths, 3, 120),
     desiredMonthlyPayment: clamp(Number.isFinite(desiredMonthlyPayment) ? desiredMonthlyPayment : DEFAULT_INPUTS.desiredMonthlyPayment, 500, 50000),
-    fredApiKey: safe.fredApiKey || '',
     loanPurpose: ['any', 'workingCapital', 'equipment', 'realEstate'].includes(safe.loanPurpose)
       ? safe.loanPurpose
       : DEFAULT_INPUTS.loanPurpose,

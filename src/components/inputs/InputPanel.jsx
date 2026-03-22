@@ -110,23 +110,7 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
     employeeCount = 10,
     preferredTermMonths = 36,
     desiredMonthlyPayment = 3000,
-    fredApiKey = '',
   } = inputs;
-
-  // Get stored key for display, mask it
-  const displayKey = fredApiKey || localStorage.getItem('fredApiKey') || '';
-  const maskedKey = displayKey ? `${displayKey.slice(0,4)}****${displayKey.slice(-4)}` : '';
-
-  const handleKeyChange = (e) => {
-    const value = e.target.value;
-    onUpdate('fredApiKey', value);
-    localStorage.setItem('fredApiKey', value);
-  };
-
-  const handleRefreshRates = () => {
-    // Dispatch custom event to trigger useLiveRates refresh
-    window.dispatchEvent(new CustomEvent('refreshRates'));
-  };
 
   const monthlyRevenue = Math.round(annualRevenue / 12);
 
@@ -296,23 +280,6 @@ export function InputPanel({ inputs, onUpdate, onReset, isExpanded, onToggle }) 
             </div>
           </InputGroup>
 
-          <div className="sidebar-section-label">**Live Rates**</div>
-
-          <InputGroup data-accent="indigo" label="FRED API Key" tooltip="Free from https://fred.stlouisfed.org/docs/api/api_key.html. Enter → live PRIME/CC rates. No key = static fallback.">
-            <div className="fred-input-row">
-              <input
-                type="password"
-                className="slider-text-input fred-key-input"
-                value={maskedKey}
-                onChange={handleKeyChange}
-                placeholder="xxxx...xxxx"
-                title="Key auto-saves. Click ↻ to refresh rates."
-              />
-              <button type="button" className="refresh-btn-small" onClick={handleRefreshRates}>↻</button>
-            </div>
-            {displayKey && <span className="input-sub text-success">✓ Live rates enabled ({displayKey.length} chars)</span>}
-            {!displayKey && <span className="input-sub text-warning">Static rates — enter FRED key for live data</span>}
-          </InputGroup>
         </div>
       ) : (
         <div className="sidebar-mini-content">
