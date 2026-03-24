@@ -68,7 +68,7 @@ const URGENCY_LABELS = {
   'exploring': 'Just exploring',
 };
 
-export function InsightsPanel({ results, inputs }) {
+export function InsightsPanel() {
   const [agg, setAgg] = useState({});
   const [profile, setProfile] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(Date.now());

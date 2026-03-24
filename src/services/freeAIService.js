@@ -123,7 +123,7 @@ export async function askAI(userQuestion, calculationData, userInputs) {
     await initAI();
   }
 
-  const { results, rates } = calculationData;
+  const { results } = calculationData;
 
   switch (selectedProvider) {
     case 'groq':
