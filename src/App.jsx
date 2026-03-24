@@ -5,6 +5,8 @@ import { InputPanel } from './components/inputs/InputPanel';
 import { SummaryBar } from './components/dashboard/SummaryBar';
 import { FilterBar } from './components/dashboard/FilterBar';
 import { matchesFilter } from './components/dashboard/filterUtils';
+import { OnboardingModal } from './components/onboarding/OnboardingModal';
+import { hasCompletedOnboarding } from './services/dataCollectionService';
 const TradeoffChart = lazy(() =>
   import('./components/dashboard/TradeoffChart').then((m) => ({ default: m.TradeoffChart })),
 );
@@ -45,6 +47,9 @@ const AIAdvisorChat = lazy(() =>
 );
 const FreeAIChat = lazy(() =>
   import('./components/assistant/FreeAIChat').then((m) => ({ default: m.FreeAIChat })),
+);
+const InsightsPanel = lazy(() =>
+  import('./components/insights/InsightsPanel').then((m) => ({ default: m.InsightsPanel })),
 );
 
 class ErrorBoundary extends Component {
@@ -146,6 +151,7 @@ export default function App() {
   const [strategy, setStrategy] = useState('none');
   const [activeTab, setActiveTab] = useState('compare');
   const [scheduleRow, setScheduleRow] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasCompletedOnboarding());
 
   const { rates, status: ratesStatus, error: ratesError, refresh: refreshRates } = useLiveRates();
 
@@ -301,6 +307,23 @@ export default function App() {
   }, [activeTab]);
 
   return (
+    <>
+    {showOnboarding && (
+      <OnboardingModal
+        inputs={inputs}
+        onComplete={(profile) => {
+          setShowOnboarding(false);
+          // Pre-fill inputs from onboarding profile where applicable
+          if (profile.businessAge) {
+            setInputs((prev) => sanitizeInputs({ ...prev, businessAge: Number(profile.businessAge) }));
+          }
+        }}
+        onSkip={() => {
+          setShowOnboarding(false);
+          try { localStorage.setItem('finsight-onboarding-v1', JSON.stringify({ skipped: true, at: new Date().toISOString() })); } catch {}
+        }}
+      />
+    )}
     <AppShell sidebar={<InputPanel inputs={inputs} onUpdate={updateInput} onReset={resetInputs} />}>
       <TopBar
         rates={rates}
@@ -442,6 +465,14 @@ export default function App() {
             </SuspenseSection>
           </section>
         )}
+
+        {activeTab === 'insights' && (
+          <section id="insights" className="section-block">
+            <SuspenseSection>
+              <InsightsPanel results={results} inputs={inputs} />
+            </SuspenseSection>
+          </section>
+        )}
       </main>
 
       {scheduleRow && (
@@ -451,5 +482,6 @@ export default function App() {
         />
       )}
     </AppShell>
+    </>
   );
 }

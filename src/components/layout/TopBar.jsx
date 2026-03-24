@@ -8,6 +8,7 @@ const TABS = [
   { id: 'aiAdvisor', label: 'AI Advisor' },
   { id: 'aiChat', label: 'Free AI' },
   { id: 'assistant', label: 'Assistant' },
+  { id: 'insights', label: '📊 Insights' },
 ];
 
 export function TopBar({ rates, ratesStatus, ratesError, onRefreshRates, results, inputs, onReset, activeTab, onTabChange }) {
