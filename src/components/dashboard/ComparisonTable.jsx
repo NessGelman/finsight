@@ -172,7 +172,14 @@ export function ComparisonTable({ results, savedResults, selectedProduct, onSele
                   </div>
                 </td>
                 <td><span className={sacCellClass(row.sac)}>{formatPercent(row.sac)}</span></td>
-                <td><span className={sacCellClass(row.eac ?? row.sac)}>{formatPercent(row.eac ?? row.sac)}</span></td>
+                <td>
+                  <span className={sacCellClass(row.eac ?? row.sac)}>{formatPercent(row.eac ?? row.sac)}</span>
+                  {row.effectiveAPR != null && (
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                      ~{formatPercent(row.effectiveAPR)} true APR
+                    </div>
+                  )}
+                </td>
                 <td>{formatCurrency(row.monthlyPayment)}</td>
                 <td>{formatPercent(row.freeCashflowPct)}</td>
                 <td style={{ color: 'var(--text-secondary)' }}>{formatMonths(row.termMonths)}</td>

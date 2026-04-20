@@ -76,7 +76,7 @@ test('revenue-based financing exposes expected and capped terms', () => {
   }, null, { skipSchedules: true });
 
   const rbf = findProduct(results, 'revenueBased');
-  assert.equal(rbf.expectedTermMonths, 65);
+  assert.equal(rbf.expectedTermMonths, 109); // updated for 6% revenue share (was 65 at 10%)
   assert.equal(rbf.termMonths, 48); // capped
   assert.ok(Math.abs(rbf.monthlyPayment - (rbf.totalCost / 48)) < 0.01);
 });

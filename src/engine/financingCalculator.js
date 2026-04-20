@@ -98,6 +98,23 @@ function calcLineOfCredit(principal, apr, termMonths, utilization = 1) {
   };
 }
 
+// IRR-based monthly rate: solves principal = pmt × (1-(1+r)^-n)/r via Newton's method
+function irrMonthlyRate(principal, monthlyPayment, termMonths) {
+  if (monthlyPayment <= 0 || termMonths <= 0 || principal <= 0) return 0;
+  let r = 0.05;
+  for (let i = 0; i < 200; i++) {
+    r = Math.max(r, 1e-10);
+    const pow = Math.pow(1 + r, -termMonths);
+    const pv = monthlyPayment * (1 - pow) / r;
+    const dpv = monthlyPayment * ((1 - pow) / (r * r) - termMonths * pow / r);
+    if (Math.abs(dpv) < 1e-15) break;
+    const delta = (pv - principal) / dpv;
+    r -= delta;
+    if (Math.abs(delta) < 1e-12) break;
+  }
+  return Math.max(r, 0);
+}
+
 function calcMCA(principal, factorRate, termMonths) {
   const payback = principal * factorRate;
   const interestAmount = 0; // MCA doesn't charge "interest" — it's a factor fee
@@ -105,7 +122,10 @@ function calcMCA(principal, factorRate, termMonths) {
   const totalInterest = feeAmount;
   const monthlyPayment = payback / termMonths;
   const { sac, eac } = annualizedCostMetrics(principal, payback, termMonths);
-  return { totalCost: payback, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, termMonths };
+  // True effective APR using IRR of monthly payment stream (vs. simplified bullet-loan EAC)
+  const monthlyIRR = irrMonthlyRate(principal, monthlyPayment, termMonths);
+  const effectiveAPR = (Math.pow(1 + monthlyIRR, 12) - 1) * 100;
+  return { totalCost: payback, totalInterest, interestAmount, feeAmount, monthlyPayment, sac, eac, effectiveAPR, termMonths };
 }
 
 function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
@@ -132,13 +152,14 @@ function calcInvoiceFactoring(principal, monthlyFeeRate, termMonths) {
   };
 }
 
-function calcRBF(principal, capRate, annualRevenue) {
+function calcRBF(principal, capRate, annualRevenue, revenueSharePct = 0.06) {
   // Repayment cap model: borrow $X, pay back $X × capRate total.
-  // 10% of monthly revenue is modeled as the sweep; term is derived from that sweep and capped.
+  // Revenue share % of monthly revenue is the sweep; term is derived from that sweep and capped.
+  // Default 6% is typical mid-market; industry range is 2–10%.
   const totalCost = principal * capRate;
   const feeAmount = totalCost - principal;
   const monthlyRevenue = annualRevenue / 12;
-  const revenueSharePayment = monthlyRevenue * 0.10;
+  const revenueSharePayment = monthlyRevenue * revenueSharePct;
   const expectedTermMonths = revenueSharePayment > 0
     ? Math.ceil(totalCost / revenueSharePayment)
     : 48;
@@ -241,18 +262,38 @@ export function buildBaseParams(liveRates) {
     invoiceFactoring: { monthlyFeeRate: 2.5, termMonths: 4 },
     equipmentFinancing: { apr: prime + 1.5, termMonths: 48 },
     termLoan: { apr: prime + 7.5, termMonths: 36 },
-    revenueBased: { capRate: 1.30 },
+    revenueBased: { capRate: 1.30, revenueSharePct: 0.06 },
   };
 }
 
-function getParams(id, creditScore, businessAge, collateral, liveRates) {
+function getParams(id, creditScore, businessAge, collateral, liveRates, principal = 0) {
   const base = { ...buildBaseParams(liveRates)[id] };
   const cm = creditMultiplier(creditScore);
   const ageMult = businessAge < 2 ? 1.2 : 1.0;
   const collateralMult = collateralRateMultiplier(id, collateral);
+
   if (base.apr !== undefined) {
-    base.apr = Math.min(base.apr * cm * ageMult * collateralMult, 99);
+    let adjustedApr = base.apr * cm * ageMult * collateralMult;
+    // SBA 7(a) rates are legally capped by loan amount (SBA SOP 50 10 7.1)
+    if (id === 'sba') {
+      const prime = liveRates?.prime?.value ?? 7.5;
+      const maxSpread = principal < 25000 ? 4.75 : principal < 50000 ? 3.75 : 2.75;
+      adjustedApr = Math.min(adjustedApr, prime + maxSpread);
+    }
+    base.apr = Math.min(adjustedApr, 99);
   }
+
+  // MCA factor rates and invoice factoring fee rates vary with borrower risk profile.
+  // Use square-root damping since these products have lower rate elasticity than APR products.
+  if (base.factorRate !== undefined) {
+    const adj = Math.sqrt(cm * ageMult);
+    base.factorRate = Math.min(base.factorRate * adj, 1.60);
+  }
+  if (base.monthlyFeeRate !== undefined) {
+    const adj = Math.sqrt(cm * ageMult);
+    base.monthlyFeeRate = Math.min(base.monthlyFeeRate * adj, 5.0);
+  }
+
   return base;
 }
 
@@ -479,7 +520,7 @@ export function calculateAllOptions(
   ];
 
   const results = products.map((id) => {
-    const params = getParams(id, creditScore, businessAge, collateral, liveRates);
+    const params = getParams(id, creditScore, businessAge, collateral, liveRates, principal);
     let calc;
     switch (id) {
       case 'creditCard':
@@ -504,7 +545,7 @@ export function calculateAllOptions(
         calc = calcTermLoan(principal, params.apr, params.termMonths);
         break;
       case 'revenueBased':
-        calc = calcRBF(principal, params.capRate, annualRevenue);
+        calc = calcRBF(principal, params.capRate, annualRevenue, params.revenueSharePct);
         break;
       default:
         calc = { totalCost: 0, totalInterest: 0, interestAmount: 0, feeAmount: 0, monthlyPayment: 0, sac: 0, eac: 0, termMonths: 12 };

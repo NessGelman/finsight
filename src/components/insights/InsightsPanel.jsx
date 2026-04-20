@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { getAggregateInsights, getOnboardingProfile } from '../../services/dataCollectionService';
 
 // Simple bar chart using plain divs — no extra dependencies
@@ -69,14 +69,13 @@ const URGENCY_LABELS = {
 };
 
 export function InsightsPanel() {
-  const [agg, setAgg] = useState({});
-  const [profile, setProfile] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [agg, setAgg] = useState(() => getAggregateInsights());
+  const [profile, setProfile] = useState(() => getOnboardingProfile());
 
-  useEffect(() => {
+  const handleRefresh = useCallback(() => {
     setAgg(getAggregateInsights());
     setProfile(getOnboardingProfile());
-  }, [lastRefresh]);
+  }, []);
 
   const totalSessions = agg.totalSessions || 0;
   const hasData = totalSessions > 0;
@@ -125,7 +124,7 @@ export function InsightsPanel() {
           <button
             type="button"
             className="top-bar-btn"
-            onClick={() => setLastRefresh(Date.now())}
+            onClick={handleRefresh}
             title="Refresh data"
           >
             ↻ Refresh

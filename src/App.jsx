@@ -320,7 +320,7 @@ export default function App() {
         }}
         onSkip={() => {
           setShowOnboarding(false);
-          try { localStorage.setItem('finsight-onboarding-v1', JSON.stringify({ skipped: true, at: new Date().toISOString() })); } catch (_e) { /* ignore */ }
+          try { localStorage.setItem('finsight-onboarding-v1', JSON.stringify({ skipped: true, at: new Date().toISOString() })); } catch { /* ignore */ }
         }}
       />
     )}
