@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test';
 
 test.describe('FinSight E2E', () => {
   test.beforeEach(async ({ page }) => {
+    // Skip onboarding modal so it doesn't block UI interactions
+    await page.addInitScript(() => {
+      localStorage.setItem('finsight-onboarding-v1', JSON.stringify({ skipped: true, at: new Date().toISOString() }));
+    });
     await page.goto('/finsight/', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Compare' })).toBeVisible();
   });
